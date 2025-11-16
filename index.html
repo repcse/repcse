@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dxb</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/dexie@3.2.2/dist/dexie.min.js"></script>
+</head>
+<body class="bg-white text-black min-h-screen p-4 font-mono">
+
+  <!-- Header -->
+<header class="text-center mb-6">
+  <h1 class="text-1xl font-bold uppercase tracking-wider">repcse (lite)</h1>
+  <p class="text-xs text-gray-500">Created by E-King 👑</p>
+</header>
+
+<!-- Screen: Login -->
+<section id="loginScreen" class="max-w-sm mx-auto space-y-4">
+  <input id="username" type="text" placeholder="Enter Username"
+    class="w-full border p-2 rounded focus:outline-none focus:ring focus:border-blue-300" />
+  <input id="password" type="password" placeholder="Enter Password"
+    class="w-full border p-2 rounded focus:outline-none focus:ring focus:border-blue-300" />
+  <button id="loginBtn"
+    class="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition">Login / Sign Up</button>
+</section>
+
+<!-- Screen: Home (Hidden Initially) -->
+<section id="homeScreen" class="hidden max-w-sm mx-auto mt-6 space-y-4">
+
+  <!-- Welcome Box -->
+  <div class="text-center">
+    <h2 class="text-sm font-bold">Welcome, <span id="userDisplay"></span> 👋</h2>
+  </div>
+
+  <!-- Stats -->
+<div class="bg-white border rounded p-4">
+  <table class="w-full text-sm text-center">
+    <thead>
+      <tr class="text-gray-500">
+        <th>💰 Balance</th>
+        <th>⭐ EXP</th>
+        <th>🏅 Level</th>
+        <th>📅 Age</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="font-semibold">
+        <td><span id="balance">0</span> cr</td>
+        <td><span id="exp">0</span></td>
+        <td><span id="level">1</span></td>
+        <td><span id="age">-</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+   <!-- mini game Section  -->
+<div id="miniGameContainer" class="bg-white border p-4 rounded space-y-2 mt-4"></div>
+
+   <!-- Jobs Section  -->
+<div class="bg-white border p-4 rounded space-y-2">
+  <h3 class="font-bold text-sm">💼 Jobs</h3>
+  <div id="jobTable" class="text-xs"></div>
+</div>
+
+  <!-- Market Section -->
+<div class="bg-white border p-4 rounded space-y-2">
+  <h3 class="font-bold text-sm">📊 Market</h3>
+  <table class="w-full text-xs">
+    <thead>  
+  <tr>  
+    <th>Item</th>  
+    <th>Base</th>
+    <th>Price</th>  
+    <th>Buy</th>  
+    <th>Sell</th>  
+  </tr>  
+</thead>
+    <tbody id="marketTable"></tbody>
+  </table>
+</div>
+
+  <!-- Den / Inventory -->
+  <div class="bg-white border p-4 rounded space-y-2">
+    <h3 class="font-bold text-sm">⛺ My Den</h3>
+    <div id="denTable" class="text-xs"></div>
+  </div>
+
+       <!-- Business Section -->
+<div class="bg-white border p-4 rounded space-y-2">
+  <h3 class="font-bold text-sm">🏪 Business</h3>
+  <div id="businessTable" class="overflow-x-auto"></div>
+</div>
+
+  <!-- Bank / Claim / History -->
+  <div class="bg-white border p-4 rounded space-y-2">
+    <h3 class="font-bold text-sm">🏦 dxb Bank</h3>
+    <div class="mt-4 text-center text-xs">
+      <button id="interestBtn" class="p-1 text-purple-500 rounded hover:text-green-600">💲ClaimInterest</button>
+      <button id="exportBtn" class="p-1 text-pink-500 rounded hover:text-gray-600">📃ExportSummary</button>
+    </div>
+    <table class="w-full text-xs mt-2">
+      <thead>
+        <tr>
+          <th class="text-left">#</th>
+          <th class="text-left">Type</th>
+          <th class="text-right">Amount</th>
+          <th class="text-right">Date</th>
+        </tr>
+      </thead>
+      <tbody id="historyTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Save / Load / Logout -->
+  <div class="mt-4 space-x-2 text-center">
+    <button onclick="saveUserData()" class="px-3 py-1 text-green-500 rounded hover:text-green-600">💾save</button>
+    <input type="file" id="importFile" accept=".json" class="hidden" onchange="loadUserData(event)" />
+    <button onclick="document.getElementById('importFile').click()" class="px-3 py-1 text-yellow-500 rounded hover:text-yellow-600">📂load</button>
+    <button onclick="logout()" class="px-3 py-1 text-red-500 rounded hover:text-red-600">🚪logout</button>
+  </div>
+</section>
+
+<!-- Toast Notification -->
+<div id="toastBox" class="fixed bottom-4 right-4 space-y-2 z-50"></div>
+
+  <!-- JS Area -->
+  <script>
+     
+    // ─────────── db ───────────────────
+
+    const db = new Dexie("0-0-2-dxb");
+    db.version(1).stores({
+      users: "++id,username,password,balance,exp,level",
+    });
+    
+    let currentUser = null;
+    
+    // ─────────── element refs ────────────────
+
+  const loginBtn = document.getElementById("loginBtn");
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const userDisplay = document.getElementById("userDisplay");
+    const balanceDisplay = document.getElementById("balance");
+    const expDisplay = document.getElementById("exp");
+    const levelDisplay = document.getElementById("level");
+    const toastBox = document.getElementById("toastBox");
+    const ageDisplay = document.getElementById("age");
+
+    // ─────────── signup/login ─────────────────
+
+    loginBtn.addEventListener("click", async () => {
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value.trim();
+  if (!username || !password) return showToast("Please fill in all fields.");
+  if (username.length < 3) return showToast("Username must be at least 7 characters.");
+  if (password.length < 5) return showToast("Password must be at least 7 characters.");
+  const isAdmin = username === "pcse" && password === "admin220700";
+  let user = await db.users.where({ username }).first();
+  if (!user) {
+    await db.users.add({
+      username,
+      password,
+      balance: isAdmin ? 99999999999 : 0,
+      exp: isAdmin ? 999999 : 0,
+      level: isAdmin ? 107 : 1,
+      createdAt: Date.now()
+    });
+    user = await db.users.where({ username }).first();
+    showToast(isAdmin ? "Admin account created!" : "New account created!");
+  } else if (user.password !== password) {
+    return showToast("Incorrect password!");
+  }
+  currentUser = user;
+  localStorage.setItem("userId", currentUser.id);
+  usernameInput.value = "";
+  passwordInput.value = "";
+  showHome();
+});
+
+    // ─────────── renderall ────────
+
+   function renderAll() {
+  jobPage = marketPage = denPage = businessPage = 0;
+  renderHistory();
+  renderMarket();
+  renderDen();
+  renderJobs();
+  renderBusiness();
+  renderMiniGame();
+  
+
+  userDisplay.textContent = currentUser.username;
+  balanceDisplay.textContent = currentUser.balance;
+  expDisplay.textContent = currentUser.exp;
+  levelDisplay.textContent = currentUser.level;
+
+  ageDisplay.textContent = getAccountAgeText(currentUser.createdAt || Date.now());
+}
+
+    // ─────────── showhome ────────
+
+    async function showHome() {
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("homeScreen").classList.remove("hidden");
+
+  // Reset job & business state if corrupted
+  jobState = currentUser.jobState || null;
+  if (jobState && typeof jobState.end !== "number") {
+    jobState = null;
+    currentUser.jobState = null;
+    await db.users.update(currentUser.id, { jobState: null });
+  }
+
+  businessState = currentUser.businessState || null;
+  if (businessState && typeof businessState.end !== "number") {
+    businessState = null;
+    currentUser.businessState = null;
+    await db.users.update(currentUser.id, { businessState: null });
+  }
+
+  renderAll(); 
+}
+
+    // ─────────── window load ────────
+
+   window.addEventListener("DOMContentLoaded", async () => {
+  const savedId = localStorage.getItem("userId");
+
+  if (savedId) {
+    const user = await db.users.get(Number(savedId));
+    if (user) {
+      currentUser = user;
+
+      await showHome(); // Ini dah panggil renderAll() juga
+      updateMarketPrices();
+      setInterval(updateMarketPrices, 30000);
+
+      setInterval(() => {
+        if (!currentUser) return;
+        if (jobState) renderJobs();
+
+        const state = currentUser.jobState;
+        if (state) {
+          const job = jobList.find(j => j.id === state.id);
+          if (job?.requiredItem) {
+            const inv = currentUser.inventory || {};
+            const qty = inv[job.requiredItem] || 0;
+            const dur = currentUser[job.requiredItem + "Durability"] ?? 100;
+            if (qty <= 0 || dur <= 0) {
+              cancelJob(`no ${job.requiredItem}`);
+            }
+          }
+        }
+      }, 1000);
+
+      setInterval(() => {
+        if (!currentUser || !currentUser.businessState) return;
+        if (businessState) renderBusiness();
+
+        const biz = businessList.find(b => b.id === currentUser.businessState.id);
+        if (!biz || !biz.requiredItem) return;
+
+        const inv = currentUser.inventory || {};
+        const qty = inv[biz.requiredItem] || 0;
+        const dur = currentUser[biz.requiredItem + "Durability"] ?? 100;
+        if (qty <= 0 || dur <= 0) {
+          cancelBusiness(`no ${biz.requiredItem}`);
+        }
+      }, 1000);
+    }
+  }
+});
+
+    // ─────────── age save load logout ─────────
+
+function getAccountAgeText(createdAt) {
+  const ms = Date.now() - createdAt;
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+  if (days < 1) return "Today";
+  if (days === 1) return "1 day";
+  if (days < 30) return `${days} days`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months > 1 ? "s" : ""}`;
+  const years = Math.floor(months / 12);
+  return `${years} year${years > 1 ? "s" : ""}`;
+}
+
+function saveUserData() {
+  if (!currentUser) return showToast("Tiada user aktif");
+  const data = JSON.stringify(currentUser, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dxb-${currentUser.username}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Data berjaya disimpan");
+}
+async function loadUserData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      const existing = await db.users.get(imported.id);
+      if (existing) {
+        await db.users.update(imported.id, imported);
+      } else {
+        await db.users.add(imported);
+      }
+      currentUser = imported;
+      await db.users.update(currentUser.id, currentUser);
+      showToast("Data berjaya dimuat naik");
+      showHome();
+    } catch (err) {
+      showToast("Fail tidak sah");
+    }
+  };
+  reader.readAsText(file);
+}
+    function logout() {
+  localStorage.removeItem("userId");
+  location.reload();
+}
+    
+    // ─────────── toast ───────────────────
+
+function showToast(message) {
+  const toast = document.createElement("div");
+  toast.className = "bg-black text-white px-4 py-2 rounded shadow animate-fadein";
+  toast.textContent = message;
+  if (toastBox.children.length >= 5) {
+    toastBox.removeChild(toastBox.firstChild);
+  }
+  toastBox.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+     
+    // ─────────── level logic ────────────────
+
+    function calculateLevel(exp) {
+      let lvl = 1;
+      while (exp >= lvl * 100 && lvl < 107) {
+        lvl++;
+      }
+      return lvl;
+    }
+   
+    // ─────────── Time ───────────────────
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function formatTime(ms) {
+  const total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600).toString().padStart(2, "0");
+  const m = Math.floor((total % 3600) / 60).toString().padStart(2, "0");
+  return `${h}h ${m}m`;
+}
+
+    // ─────────── history ───────────────────
+
+async function addHistory(type, amount) {
+  currentUser.history = currentUser.history || [];
+  currentUser.history.push({
+    type,
+    amount,
+    date: new Date().toISOString()
+  });
+  if (currentUser.history.length > 3) {
+    currentUser.history.shift();
+  }
+  await db.users.update(currentUser.id, { history: currentUser.history });
+  showHome();
+}
+function renderHistory() {
+  const table = document.getElementById("historyTable");
+  table.innerHTML = "";
+  (currentUser.history || [])
+    .slice()
+    .reverse()
+    .forEach((tx, i) => {
+      table.innerHTML += `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${tx.type}</td>
+          <td class="text-right">${tx.amount}</td>
+          <td class="text-right">${new Date(tx.date).toLocaleDateString()}</td>
+        </tr>
+      `;
+    });
+}
+document.getElementById("interestBtn").addEventListener("click", async () => {
+  if (!currentUser) return;
+  const now = Date.now();
+  const last = currentUser.lastInterest ?? 0;
+  const cooldown = 60 * 60 * 1000; // 1 hour
+  if (now - last < cooldown) {
+    const minutesLeft = Math.ceil((cooldown - (now - last)) / 60000);
+    showToast(`Please wait ${minutesLeft} more minute(s) to claim interest again.`);
+    return;
+  }
+  const bonus = Math.floor(currentUser.balance * 0.02);
+  if (bonus <= 0) {
+    showToast("Balance too low to earn interest.");
+    return;
+  }
+  currentUser.balance += bonus;
+  currentUser.lastInterest = now;
+  await addHistory("Interest Earned", bonus);
+  await db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    lastInterest: now
+  });
+  showToast(`+${bonus} cr earned from interest!`);
+  showHome();
+});
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const report = {
+    user: currentUser.username,
+    balance: currentUser.balance,
+    experience: currentUser.exp,
+    level: currentUser.level,
+    history: currentUser.history || []
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${currentUser.username}_summary.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Summary file has been exported.");
+});
+
+    // ─────────── market ───────────────────
+
+const items = [
+  { name: "dxbcoin", base: 737073 },
+  { name: "milk", base: 50 },
+  { name: "pager", base: 721 },
+  { name: "batery", base: 137 },
+  { name: "laptop", base: 2500 },
+  { name: "pc", base: 4000 },
+  { name: "bicycle", base: 700 },
+  { name: "headset", base: 150 },
+  { name: "camera", base: 1200 },
+  { name: "toolkit", base: 350 },
+  { name: "tablet", base: 1800 },
+  { name: "wrench", base: 220 },
+  { name: "labcoat", base: 500 },
+  { name: "drone", base: 850 },
+  { name: "remote", base: 290 },
+  { name: "joystick", base: 400 },
+  { name: "suit", base: 3000 },
+  { name: "scanner", base: 950 },
+  { name: "goggles", base: 380 },
+  { name: "smartwatch", base: 600 },
+  { name: "smartphone", base: 2970 },
+  { name: "coffee", base: 15 },
+  { name: "keyboard", base: 120 },
+  { name: "energyBar", base: 35 },
+  { name: "usbStick", base: 90 },
+  { name: "mic", base: 250 },
+  { name: "box", base: 170 },
+  { name: "quantumDrive", base: 5000 },
+  { name: "telescope", base: 1500 },
+  { name: "timeChip", base: 9999 }
+];
+let marketPage = 0;
+const itemsPerPage = 3;
+
+let marketPrices = {};
+
+function updateMarketPrices() {
+  items.forEach(item => {
+    marketPrices[item.name] = Math.floor(item.base * (1 + Math.random() * 0.2));
+  });
+  renderMarket(); 
+}
+
+function renderMarket() {
+  const table = document.getElementById("marketTable");
+  const start = marketPage * itemsPerPage;
+  const end = start + itemsPerPage;
+  const visible = items.slice(start, end);
+
+  let html = "";
+
+  visible.forEach(item => {
+    const price = Math.floor(item.base * (1 + Math.random() * 0.2));
+    html += `
+      <tr>
+        <td class="capitalize">${item.name}</td>
+        <td>${item.base}</td>
+        <td>${price}</td>
+        <td><button onclick="buyItem('${item.name}', ${price})" class="text-blue-600 underline">Buy</button></td>
+        <td><button onclick="sellItem('${item.name}', ${price})" class="text-pink-600 underline">Sell</button></td>
+      </tr>
+    `;
+  });
+
+  const totalPages = Math.ceil(items.length / itemsPerPage);
+  const prevDisabled = marketPage <= 0 ? "opacity-50 pointer-events-none" : "";
+  const nextDisabled = marketPage >= totalPages - 1 ? "opacity-50 pointer-events-none" : "";
+
+  html += `
+    <tr>
+      <td colspan="5" class="text-center pt-2 text-xs">
+        <button onclick="prevMarketPage()" class="px-2 ${prevDisabled}">⬅️</button>
+        <span class="mx-2">Page ${marketPage + 1} of ${totalPages}</span>
+        <button onclick="nextMarketPage()" class="px-2 ${nextDisabled}">➡️</button>
+      </td>
+    </tr>
+  `;
+
+  table.innerHTML = html;
+}
+
+function prevMarketPage() {
+  if (marketPage > 0) {
+    marketPage--;
+    renderMarket();
+  }
+}
+function nextMarketPage() {
+  const totalPages = Math.ceil(items.length / itemsPerPage);
+  if (marketPage < totalPages - 1) {
+    marketPage++;
+    renderMarket();
+  }
+}
+
+async function buyItem(item, price) {
+  if (currentUser.balance < price) {
+    return showToast("Not enough cr to purchase.");
+  }
+
+  currentUser.balance -= price;
+  currentUser.exp += 3;
+  currentUser.level = calculateLevel(currentUser.exp);
+  currentUser.inventory = currentUser.inventory || {};
+  currentUser.inventory[item] = (currentUser.inventory[item] || 0) + 1;
+
+  if (item === "pager" && currentUser.inventory[item] === 1) {
+    currentUser.pagerDurability = 100;
+  }
+  if (item === "laptop" && currentUser.inventory[item] === 1) {
+    currentUser.laptopDurability = 100;
+  }
+  if (item === "pc" && currentUser.inventory[item] === 1) {
+    currentUser.pcDurability = 100;
+  }
+
+  await addHistory(`Buy ${item}`, -price);
+  await db.users.update(currentUser.id, currentUser);
+  showToast(`Purchased ${item} for ${price} cr.`);
+  showHome();
+  renderMarket();
+}
+
+async function sellItem(item) {
+  const inv = currentUser.inventory || {};
+  if (!inv[item] || inv[item] <= 0) return;
+
+  inv[item]--;
+  if (inv[item] <= 0) delete inv[item];
+
+  let updateData = { inventory: inv };
+  let notify = "";
+
+  if ((item === "laptop" || item === "pc") && currentUser.jobState) {
+    const job = jobList.find(j => j.id === currentUser.jobState.id);
+    if (job?.requiredItem === item) {
+      await cancelJob(`no ${item}`);
+      updateData.jobState = null;
+      notify += `❌ Job canceled (no ${item})\n`;
+    }
+  }
+
+  if ((item === "laptop" || item === "pc") && currentUser.businessState) {
+    const biz = businessList.find(b => b.id === currentUser.businessState.id);
+    if (biz?.requiredItem === item) {
+      await cancelBusiness(`no ${item}`);
+      updateData.businessState = null;
+      notify += `❌ Business canceled (no ${item})\n`;
+    }
+  }
+
+  if (item === "pager") {
+    await cancelPager(`no pager`);
+    updateData.pagerOn = false;
+    updateData.pagerDurability = 100;
+    notify += `❌ Pager turned OFF (no pager)\n`;
+  }
+
+  if (item === "laptop") updateData.laptopDurability = 100;
+  if (item === "pc") updateData.pcDurability = 100;
+
+  await db.users.update(currentUser.id, updateData);
+  showToast(`Sold 1 ${item}.` + (notify ? `\n${notify}` : ""));
+  renderDen();
+  renderJobs();
+  renderBusiness();
+}
+       
+    // ─────────── den ───────────────────
+
+  let denPage = 0;
+const denPerPage = 3;
+function renderDen() {
+  const container = document.getElementById("denTable");
+  const inventory = currentUser.inventory || {};
+  const itemList = Object.keys(inventory).filter(item => inventory[item] > 0);
+  const start = denPage * denPerPage;
+  const end = start + denPerPage;
+  const visible = itemList.slice(start, end);
+  let html = `
+    <table class="w-full text-xs">
+      <thead>
+        <tr class="font-bold text-left border-b">
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Durability</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  visible.forEach(item => {
+    let durability = "-";
+    let action = "-";
+    if (["pager", "laptop", "pc"].includes(item)) {
+      durability = `${currentUser[item + "Durability"] ?? 100}%`;
+    }
+    if (item === "batery") {
+      action = `<button onclick="useBattery()" class="text-blue-600 underline">Use</button>`;
+    } else if (item === "pager") {
+      const status = currentUser.pagerOn ? "Turn OFF" : "Turn ON";
+      action = `<button onclick="togglePager()" class="text-purple-600 underline">${status}</button>`;
+    }
+    html += `
+      <tr class="border-t">
+        <td class="capitalize">${item}</td>
+        <td>${inventory[item]}</td>
+        <td>${durability}</td>
+        <td>${action}</td>
+      </tr>
+    `;
+  });
+  html += `</tbody></table>`;
+  const totalPages = Math.ceil(itemList.length / denPerPage);
+  const prevDisabled = denPage <= 0 ? "opacity-50 pointer-events-none" : "";
+  const nextDisabled = denPage >= totalPages - 1 ? "opacity-50 pointer-events-none" : "";
+  html += `
+    <div class="text-center mt-2 text-sm">
+      <button onclick="prevDenPage()" class="px-2 ${prevDisabled}">⬅️</button>
+      <span class="mx-2">Page ${denPage + 1} of ${totalPages}</span>
+      <button onclick="nextDenPage()" class="px-2 ${nextDisabled}">➡️</button>
+    </div>
+  `;
+  container.innerHTML = html;
+}
+function prevDenPage() {
+  if (denPage > 0) {
+    denPage--;
+    renderDen();
+  }
+}
+function nextDenPage() {
+  const inventory = currentUser.inventory || {};
+  const itemList = Object.keys(inventory).filter(item => inventory[item] > 0);
+  const totalPages = Math.ceil(itemList.length / denPerPage);
+  if (denPage < totalPages - 1) {
+    denPage++;
+    renderDen();
+  }
+}
+function togglePager() {
+  currentUser.pagerOn = !currentUser.pagerOn;
+  showToast(`Pager is now ${currentUser.pagerOn ? "ON" : "OFF"}`);
+  db.users.update(currentUser.id, { pagerOn: currentUser.pagerOn });
+  renderDen();
+}
+async function useBattery() {
+  const inv = currentUser.inventory || {};
+  const itemsToCharge = ["pager", "laptop", "pc"];
+  const used = [];
+  if (!inv["batery"] || inv["batery"] <= 0) {
+    return showToast("You don't have any battery!");
+  }
+  for (const item of itemsToCharge) {
+    const qty = inv[item] || 0;
+    if (qty <= 0) continue;
+    const key = item + "Durability";
+    let durability = currentUser[key] ?? 100;
+    const missing = 100 - durability;
+    if (missing > 0 && inv["batery"] > 0) {
+      const batNeeded = Math.min(inv["batery"], missing);
+      durability += batNeeded;
+      durability = Math.min(durability, 100);
+      inv["batery"] -= batNeeded;
+      currentUser[key] = durability;
+      used.push(`${item} +${batNeeded}%`);
+    }
+  }
+  if (used.length === 0) {
+    return showToast("All items are fully charged.");
+  }
+  await db.users.update(currentUser.id, {
+    inventory: inv,
+    pagerDurability: currentUser.pagerDurability,
+    laptopDurability: currentUser.laptopDurability,
+    pcDurability: currentUser.pcDurability
+  });
+  showToast(`Used battery: ${used.join(", ")}`);
+  renderDen();
+}
+async function cancelPager(reason) {
+  currentUser.pagerOn = false;
+  currentUser.pagerDurability = 100; // reset if sold
+  await db.users.update(currentUser.id, {
+    pagerOn: false,
+    pagerDurability: 100
+  });
+  await addHistory(`Pager OFF: ${reason}`, 0);
+  showToast(`📴 Pager turned OFF: ${reason}`);
+  renderDen();
+}
+setInterval(async () => {
+  if (!currentUser || !currentUser.pagerOn) return;
+  const inv = currentUser.inventory || {};
+  const qty = inv["pager"] || 0;
+  let dur = currentUser.pagerDurability ?? 100;
+  if (qty <= 0 || dur <= 0) {
+    await cancelPager(qty <= 0 ? "no pager" : "0% durability");
+    return;
+  }
+  dur = Math.max(0, dur - 1);
+  currentUser.pagerDurability = dur;
+  const profit = Math.floor(Math.random() * 13) + 1;
+  currentUser.balance += profit;
+  await addHistory("Pager Passive Profit", profit);
+  await db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    pagerDurability: dur
+  });
+  showToast(`📡 Pager earned +${profit} cr`);
+  showHome();
+}, 180000); // 3m
+      
+    // ─────────── job ───────────────────
+
+const jobList = [
+  // id, name, duration (jam), min, max, requiredItem, requiredLevel
+  ["searchMoney", "Search Money", 0.15, 0, 1, null, 1],
+  ["homeless", "Homeless", 0.25, 1, 5, null, 1],
+  ["promoMilk", "Promoter Milk", 1, 8, 10, "milk", 1],
+  ["petCare", "Pet Care", 1.5, 10, 20, null, 2],
+  ["dataEntry", "Data Entry", 3, 19, 30, "laptop", 3],
+  ["trashPicker", "Trash Picker", 2, 10, 25, null, 4],
+  ["coffeeRunner", "Coffee Runner", 2, 15, 35, null, 5],
+  ["stockBoy", "Stock Boy", 3, 20, 40, "box", 6],
+  ["coding", "Coding", 6, 70, 127, "pc", 7],
+  ["delivery", "Food Delivery", 4, 25, 50, "bicycle", 8],
+  ["callCenter", "Call Center", 5, 30, 60, "headset", 10],
+  ["intern", "Internship", 6, 45, 85, null, 12],
+  ["cryptoMiner", "Crypto Miner", 8, 90, 150, "pc", 14],
+  ["freelancer", "Freelancer", 7, 100, 180, "laptop", 16],
+  ["youtuber", "Youtuber", 6, 120, 200, "camera", 18],
+  ["repairMan", "Repair Technician", 5, 130, 210, "toolkit", 20],
+  ["gamer", "Gamer", 5, 140, 220, "pc", 22],
+  ["cyberCafe", "Cyber Cafe Admin", 6, 150, 230, "pc", 24],
+  ["socialMedia", "Social Media Manager", 6, 160, 240, "laptop", 26],
+  ["hacker", "Junior Hacker", 7, 170, 250, "pc", 28],
+  ["researcher", "Research Assistant", 7, 180, 260, "laptop", 30],
+  ["webDev", "Web Developer", 6, 190, 270, "laptop", 32],
+  ["illustrator", "Digital Illustrator", 5, 195, 275, "tablet", 34],
+  ["aiTrainer", "AI Trainer", 6, 200, 280, "laptop", 36],
+  ["networkTech", "Network Technician", 6, 210, 290, "toolkit", 38],
+  ["robotics", "Robot Builder", 7, 220, 300, "wrench", 40],
+  ["bioLab", "Bio Lab Intern", 5, 230, 310, "labcoat", 42],
+  ["dronePilot", "Drone Pilot", 4, 240, 320, "drone", 44],
+  ["streamer", "Live Streamer", 5, 250, 330, "camera", 46],
+  ["surveyor", "Digital Surveyor", 5, 260, 340, "tablet", 48],
+  ["dataScientist", "Data Scientist", 6, 270, 350, "laptop", 50],
+  ["hackerPro", "Pro Hacker", 7, 280, 360, "pc", 52],
+  ["securityAnalyst", "Security Analyst", 6, 290, 370, "laptop", 54],
+  ["aiEngineer", "AI Engineer", 6, 300, 380, "laptop", 56],
+  ["cyberForensics", "Cyber Forensics", 6, 310, 390, "pc", 58],
+  ["quantTrader", "Quant Trader", 7, 320, 400, "laptop", 60],
+  ["gameTester", "Game Tester", 5, 330, 410, "pc", 62],
+  ["robotOperator", "Robot Operator", 5, 340, 420, "remote", 64],
+  ["cryptoTrader", "Crypto Trader", 6, 350, 430, "laptop", 66],
+  ["mlOps", "ML Ops Engineer", 6, 360, 440, "laptop", 68],
+  ["cyberSpy", "Cyber Spy", 7, 370, 450, "pc", 70],
+  ["biotechResearcher", "Biotech Researcher", 6, 380, 460, "labcoat", 72],
+  ["pilotSim", "Pilot Sim Trainer", 6, 390, 470, "joystick", 74],
+  ["aiEthics", "AI Ethics Officer", 6, 400, 480, "laptop", 76],
+  ["quantResearcher", "Quant Researcher", 6, 410, 490, "tablet", 78],
+  ["gameDev", "Game Developer", 6, 420, 500, "laptop", 80],
+  ["spaceIntern", "Space Intern", 7, 430, 510, "suit", 82],
+  ["nanoTech", "Nanotech Assistant", 6, 440, 520, "labcoat", 84],
+  ["deepSea", "Deep Sea Scanner", 5, 450, 530, "scanner", 86],
+  ["spyTrainer", "Spy Trainer", 7, 460, 540, "goggles", 88],
+  ["quantumLab", "Quantum Lab Staff", 6, 470, 550, "quantumDrive", 90],
+  ["exoplanetResearcher", "Exoplanet Researcher", 7, 480, 560, "telescope", 92],
+  ["ethicsAnalyst", "Ethics Analyst", 6, 490, 570, "laptop", 94],
+  ["moonFarmer", "Moon Farmer", 6, 500, 580, "suit", 96],
+  ["galacticTrader", "Galactic Trader", 6, 510, 590, "quantumDrive", 98],
+  ["timeEngineer", "Time Engineer", 7, 520, 600, "timeChip", 100],
+  ["godMode", "Job Master", 8, 777, 999, null, 107] // final tier
+].map(([id, name, hours, min, max, requiredItem = null, requiredLevel = 1]) => ({
+  id,
+  name,
+  duration: hours * 60 * 60 * 1000,
+  salaryMin: min,
+  salaryMax: max,
+  requiredItem,
+  requiredLevel
+}));
+     let jobState = null;
+    let jobPage = 0;
+   const jobsPerPage = 3;
+
+    function renderJobs() {
+  const container = document.getElementById("jobTable");
+  const inv = currentUser.inventory || {};
+  const start = jobPage * jobsPerPage;
+  const end = start + jobsPerPage;
+  const visible = jobList.slice(start, end);
+
+  let html = `
+    <table class="w-full text-xs text-left">
+      <thead>
+        <tr class="font-bold border-b">
+          <th>Job</th>
+          <th>Time</th>
+          <th>Salary</th>
+          <th>Equip</th>
+          <th>Level</th>
+          <th>Action</th>
+        </tr>
+      </thead><tbody>
+  `;
+
+  visible.forEach(job => {
+    const isActive = jobState?.id === job.id;
+    const hasItem = !job.requiredItem || (inv[job.requiredItem] || 0) > 0;
+    const meetsLevel = currentUser.level >= job.requiredLevel;
+    const salaryRange = `${job.salaryMin}-${job.salaryMax}`;
+
+    let row = `
+      <tr class="border-t">
+        <td>${job.name}</td>
+        <td>${formatTime(job.duration)}</td>
+        <td>${salaryRange}</td>
+        <td>${job.requiredItem || "-"}</td>
+        <td>${job.requiredLevel}</td>
+        <td>-</td>
+      </tr>
+    `;
+
+    if (isActive) {
+      const now = Date.now();
+      const timeLeft = Math.max(0, jobState.end - now);
+      const status = timeLeft <= 0 ? "Finished" : formatTime(timeLeft);
+      let action = "";
+
+      if (timeLeft <= 0) {
+        action = `<button onclick="takeSalary()" class="text-green-600 underline">Take</button>`;
+      } else if ((inv["dxbcoin"] || 0) > 0) {
+        action = `<button onclick="skipJobTime()" class="text-purple-600 underline">⏩ Skip</button>`;
+      } else {
+        action = `<span class="text-gray-400">In Progress</span>`;
+      }
+
+      row = `
+        <tr class="border-t">
+          <td>${job.name}</td>
+          <td>${status}</td>
+          <td>${jobState.salary}</td>
+          <td>${job.requiredItem || "-"}</td>
+          <td>${job.requiredLevel}</td>
+          <td>${action}</td>
+        </tr>
+      `;
+    } else if (!jobState) {
+      let action = "-";
+      if (!hasItem) {
+        action = `<span class="text-red-500 text-xs">Need ${job.requiredItem}</span>`;
+      } else if (!meetsLevel) {
+        action = `<span class="text-red-500 text-xs">Need Lvl ${job.requiredLevel}</span>`;
+      } else {
+        action = `<button onclick="claimJob('${job.id}')" class="text-blue-600 underline">Claim</button>`;
+      }
+
+      row = `
+        <tr class="border-t">
+          <td>${job.name}</td>
+          <td>${formatTime(job.duration)}</td>
+          <td>${salaryRange}</td>
+          <td>${job.requiredItem || "-"}</td>
+          <td>${job.requiredLevel}</td>
+          <td>${action}</td>
+        </tr>
+      `;
+    }
+
+    html += row;
+  });
+
+  html += `</tbody></table>`;
+
+  const totalPages = Math.ceil(jobList.length / jobsPerPage);
+  const prevDisabled = jobPage <= 0 ? "opacity-50 pointer-events-none" : "";
+  const nextDisabled = jobPage >= totalPages - 1 ? "opacity-50 pointer-events-none" : "";
+
+  html += `
+    <div class="text-center mt-2 text-sm">
+      <button onclick="prevJobPage()" class="px-2 ${prevDisabled}">⬅️</button>
+      <span class="mx-2">Page ${jobPage + 1} of ${totalPages}</span>
+      <button onclick="nextJobPage()" class="px-2 ${nextDisabled}">➡️</button>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function prevJobPage() {
+  if (jobPage > 0) {
+    jobPage--;
+    renderJobs();
+  }
+}
+
+function nextJobPage() {
+  const totalPages = Math.ceil(jobList.length / jobsPerPage);
+  if (jobPage < totalPages - 1) {
+    jobPage++;
+    renderJobs();
+  }
+}
+
+function claimJob(jobId) {
+  const job = jobList.find(j => j.id === jobId);
+  if (!job || jobState) return;
+
+  const inv = currentUser.inventory || {};
+  if (currentUser.level < job.requiredLevel) {
+    showToast(`Level ${job.requiredLevel}+ required for ${job.name}`);
+    return;
+  }
+
+  if (job.requiredItem && (!inv[job.requiredItem] || inv[job.requiredItem] <= 0)) {
+    showToast(`You need a ${job.requiredItem} to take this job.`);
+    return;
+  }
+
+  // Reduce durability
+  if (job.requiredItem) {
+    const key = job.requiredItem + "Durability";
+    const loss = Math.ceil(job.duration / (60 * 60 * 1000));
+    currentUser[key] = Math.max(0, (currentUser[key] ?? 100) - loss);
+  }
+
+  const salary = getRandomInt(job.salaryMin, job.salaryMax);
+  jobState = {
+    id: job.id,
+    start: Date.now(),
+    end: Date.now() + job.duration,
+    salary
+  };
+  currentUser.jobState = jobState;
+
+  db.users.update(currentUser.id, {
+    jobState,
+    laptopDurability: currentUser.laptopDurability,
+    pcDurability: currentUser.pcDurability
+  });
+
+  showToast(`Job "${job.name}" claimed. Salary: ${salary} cr.`);
+  renderJobs();
+  renderDen();
+}
+
+async function takeSalary() {
+  if (!jobState || Date.now() < jobState.end) return;
+
+  const job = jobList.find(j => j.id === jobState.id);
+  const salary = jobState.salary;
+  currentUser.balance += salary;
+  currentUser.exp += 10;
+  currentUser.level = calculateLevel(currentUser.exp);
+
+  await addHistory(`Job: ${job.name}`, salary);
+
+  jobState = null;
+  currentUser.jobState = null;
+
+  await db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    exp: currentUser.exp,
+    level: currentUser.level,
+    jobState: null
+  });
+
+  showToast(`Job completed: ${job.name}. You received ${salary} cr.`);
+  renderJobs();
+  showHome();
+}
+
+async function cancelJob(reason) {
+  jobState = null;
+  currentUser.jobState = null;
+  await db.users.update(currentUser.id, { jobState: null });
+  await addHistory(`Job canceled: ${reason}`, 0);
+  showToast(`❌ Job canceled: ${reason}`);
+  renderJobs();
+  showHome();
+}
+
+async function skipJobTime() {
+  if (!jobState) return showToast("❌ No job is active.");
+  const inv = currentUser.inventory || {};
+  if ((inv["dxbcoin"] || 0) < 1) return showToast("❌ Not enough dxbcoin to skip.");
+
+  inv["dxbcoin"] -= 1;
+  if (inv["dxbcoin"] <= 0) delete inv["dxbcoin"];
+
+  const salary = jobState.salary;
+  currentUser.balance += salary;
+  jobState = null;
+  currentUser.jobState = null;
+
+  await db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    inventory: inv,
+    jobState: null
+  });
+
+  await addHistory("Job Skipped", salary);
+  showToast(`⏩ Job skipped! You earned 💰 ${salary} cr`);
+  renderJobs();
+  showHome();
+}
+
+    // ──────────── business ─────────────────
+
+const businessList = [
+  ["snackStall", "Snack Stall", 500, 80, 120, 12, 7, null, 5],
+  ["iceCreamCart", "Ice Cream Cart", 1000, 100, 150, 12, 10, "bicycle", 5],
+  ["onlineStore", "Online Store", 1500, 100, 200, 12, 13, "laptop", 2],
+  ["printShop", "Print Shop", 2200, 150, 250, 12, 16, "printer", 4],
+  ["photoBooth", "Photo Booth", 3000, 180, 300, 12, 18, "camera", 4],
+  ["cyberCafe", "Cyber Cafe", 5000, 250, 500, 24, 22, "pc", 15],
+  ["usedPhoneShop", "Used Phone Shop", 7500, 300, 600, 24, 27, "smartphone", 10],
+  ["gamingArcade", "Gaming Arcade", 9000, 400, 650, 24, 32, "pc", 20],
+  ["photoStudio", "Photo Studio", 12000, 450, 700, 24, 37, "camera", 12],
+  ["computerRepair", "Computer Repair", 14000, 500, 800, 24, 42, "toolkit", 10],
+  ["bicycleShop", "Bicycle Shop", 17000, 600, 900, 24, 47, "bicycle", 12],
+  ["miniMarket", "Mini Market", 20000, 700, 1000, 24, 52, null, 8],
+  ["electronicsShop", "Electronics Shop", 25000, 800, 1200, 24, 57, "laptop", 15],
+  ["cyberSecurity", "Cyber Security Agency", 30000, 1000, 1500, 24, 62, "pc", 20],
+  ["urbanDelivery", "Urban Delivery", 35000, 1100, 1600, 24, 67, "bicycle", 10],
+  ["printAndDesign", "Print & Design Co.", 40000, 1200, 1800, 24, 72, "printer", 15],
+  ["digitalStudio", "Digital Studio", 45000, 1300, 1900, 24, 77, "camera", 20],
+  ["techStartup", "Tech Startup", 50000, 1500, 2000, 24, 82, "laptop", 25],
+  ["smartCafe", "Smart Cafe", 55000, 1600, 2100, 24, 87, "pc", 25],
+  ["deliveryFleet", "Delivery Fleet", 60000, 1700, 2300, 24, 92, "bicycle", 18],
+  ["repairEmpire", "Repair Empire", 65000, 1800, 2400, 24, 97, "toolkit", 25],
+  ["mediaStudio", "Media Studio", 70000, 1900, 2500, 24, 102, "camera", 28],
+  ["globalEshop", "Global E-Shop", 75000, 2000, 2700, 24, 107, "laptop", 30],
+  ["dxbBank", "dxb Bank", 777777, 7000, 17000, 23, 107, "dxbcoin", 40]
+].map(([id, name, capital, incomeMin, incomeMax, hours, requiredLevel, requiredItem = null, risk = 0]) => ({
+  id,
+  name,
+  capital,
+  incomeMin,
+  incomeMax,
+  duration: hours * 60 * 60 * 1000,
+  requiredLevel,
+  requiredItem,
+  risk
+}));
+let businessState = null;
+let businessPage = 0;
+const businessPerPage = 3;
+        
+function renderBusiness() {
+  const container = document.getElementById("businessTable");
+  const inv = currentUser.inventory || {};
+  const owned = currentUser.ownedBusinesses || [];
+  const start = businessPage * businessPerPage;
+  const end = start + businessPerPage;
+  const visible = businessList.slice(start, end);
+
+  let html = `
+    <table class="w-full text-xs text-left">
+      <thead>
+        <tr class="font-bold border-b">
+          <th>Biz</th>
+          <th>Status</th>
+          <th>Income</th>
+          <th>Time</th>
+          <th>Level</th>
+          <th>Equip</th>
+          <th>Risk</th>
+          <th>Action</th>
+        </tr>
+      </thead><tbody>
+  `;
+
+  visible.forEach(biz => {
+    const isRunning = businessState?.id === biz.id;
+    const now = Date.now();
+    const timeLeft = isRunning ? Math.max(0, businessState.end - now) : 0;
+    const durationText = isRunning ? (timeLeft <= 0 ? "Finished" : formatTime(timeLeft)) : formatTime(biz.duration);
+    const isOwned = owned.includes(biz.id);
+    const hasItem = !biz.requiredItem || (inv[biz.requiredItem] || 0) > 0;
+    const durabilityKey = biz.requiredItem ? biz.requiredItem + "Durability" : null;
+    const hasDurability = !durabilityKey || (currentUser[durabilityKey] ?? 100) > 0;
+    const meetsLevel = currentUser.level >= biz.requiredLevel;
+    const hasDxbCoin = (inv["dxbcoin"] || 0) > 0;
+
+    const status = isOwned
+      ? `<span class="text-green-600">Owned✅</span>`
+      : `<span class="text-yellow-600 text-xs">Fee: ${biz.capital} cxzh</span>`;
+
+    let incomeDisplay = `${biz.incomeMin}-${biz.incomeMax}`;
+    let action = "-";
+
+    if (isRunning) {
+      incomeDisplay = `${businessState.income}`;
+      if (timeLeft <= 0) {
+        action = `<button onclick="takeBusinessIncome()" class="text-green-600 underline">Take</button>`;
+      } else if (hasDxbCoin) {
+        action = `<button onclick="skipBusinessTime()" class="text-purple-600 underline">⏩ Skip</button>`;
+      } else {
+        action = `<span class="text-gray-400">Running</span>`;
+      }
+    } else if (!hasItem) {
+      action = `<span class="text-red-500 text-xs">Need ${biz.requiredItem}</span>`;
+    } else if (!hasDurability) {
+      action = `<span class="text-red-500 text-xs">0% ${biz.requiredItem}</span>`;
+    } else if (!meetsLevel) {
+      action = `<span class="text-red-500 text-xs">Need Lvl ${biz.requiredLevel}</span>`;
+    } else {
+      action = `<button onclick="startBusiness('${biz.id}')" class="text-blue-600 underline">Start</button>`;
+    }
+
+    html += `
+      <tr class="border-t">
+        <td>${biz.name}</td>
+        <td>${status}</td>
+        <td>${incomeDisplay}</td>
+        <td>${durationText}</td>
+        <td>${biz.requiredLevel}</td>
+        <td>${biz.requiredItem || "-"}</td>
+        <td>${biz.risk}%</td>
+        <td>${action}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+
+  const totalPages = Math.ceil(businessList.length / businessPerPage);
+  const prevDisabled = businessPage <= 0 ? "opacity-50 pointer-events-none" : "";
+  const nextDisabled = businessPage >= totalPages - 1 ? "opacity-50 pointer-events-none" : "";
+
+  html += `
+    <div class="text-center mt-2 text-sm">
+      <button onclick="prevBusinessPage()" class="px-2 ${prevDisabled}">⬅️</button>
+      <span class="mx-2">Page ${businessPage + 1} of ${totalPages}</span>
+      <button onclick="nextBusinessPage()" class="px-2 ${nextDisabled}">➡️</button>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function prevBusinessPage() {
+  if (businessPage > 0) {
+    businessPage--;
+    renderBusiness();
+  }
+}
+
+function nextBusinessPage() {
+  const totalPages = Math.ceil(businessList.length / businessPerPage);
+  if (businessPage < totalPages - 1) {
+    businessPage++;
+    renderBusiness();
+  }
+}
+
+function startBusiness(bizId) {
+  const biz = businessList.find(b => b.id === bizId);
+  if (!biz || businessState) return;
+
+  const inv = currentUser.inventory || {};
+  const isOwned = (currentUser.ownedBusinesses || []).includes(biz.id);
+  currentUser.ownedBusinesses = currentUser.ownedBusinesses || [];
+
+  if (biz.requiredItem) {
+    const qty = inv[biz.requiredItem] || 0;
+    if (qty <= 0) return showToast(`❌ Need ${biz.requiredItem}`);
+    const key = biz.requiredItem + "Durability";
+    const loss = Math.ceil(biz.duration / (60 * 60 * 1000));
+    if ((currentUser[key] ?? 100) <= 0) return showToast(`${biz.requiredItem} has 0% durability.`);
+    currentUser[key] = Math.max(0, (currentUser[key] ?? 100) - loss);
+  }
+
+  if (!isOwned) {
+    if (currentUser.balance < biz.capital) return showToast("❌ Not enough cxzh to start.");
+    currentUser.balance -= biz.capital;
+    currentUser.ownedBusinesses.push(biz.id);
+    addHistory(`Startup Fee: ${biz.name}`, -biz.capital);
+  }
+
+  const income = getRandomInt(biz.incomeMin, biz.incomeMax);
+  businessState = {
+    id: biz.id,
+    start: Date.now(),
+    end: Date.now() + biz.duration,
+    income
+  };
+  currentUser.businessState = businessState;
+
+  db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    businessState,
+    ownedBusinesses: currentUser.ownedBusinesses,
+    pcDurability: currentUser.pcDurability,
+    laptopDurability: currentUser.laptopDurability
+  });
+
+  showToast(`🚀 ${biz.name} started. Income: ${income} cr`);
+  renderBusiness();
+  renderDen();
+}
+
+async function takeBusinessIncome() {
+  if (!businessState || Date.now() < businessState.end) return;
+
+  const biz = businessList.find(b => b.id === businessState.id);
+  if (!biz) return;
+
+  const income = businessState.income;
+  const success = Math.random() * 100 > biz.risk;
+
+  if (success) {
+    currentUser.balance += income;
+    currentUser.exp += 8;
+    await addHistory(`Business Income: ${biz.name}`, income);
+    showToast(`✅ Business success! You earned ${income} cr.`);
+  } else {
+    const partial = Math.floor(income * 0.2);
+    currentUser.balance += partial;
+    currentUser.exp += 3;
+    await addHistory(`Business Failed: ${biz.name}`, partial);
+    showToast(`❌ Business failed. You recovered ${partial} cr.`);
+  }
+
+  currentUser.level = calculateLevel(currentUser.exp);
+  businessState = null;
+  currentUser.businessState = null;
+
+  await db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    exp: currentUser.exp,
+    level: currentUser.level,
+    businessState: null
+  });
+
+  renderBusiness();
+  showHome();
+}
+
+async function cancelBusiness(reason) {
+  businessState = null;
+  currentUser.businessState = null;
+  await db.users.update(currentUser.id, { businessState: null });
+  await addHistory(`Business canceled: ${reason}`, 0);
+  showToast(`❌ Business canceled: ${reason}`);
+  renderBusiness();
+}
+
+async function skipBusinessTime() {
+  if (!businessState) return showToast("❌ No business is active.");
+  const inv = currentUser.inventory || {};
+  if ((inv["dxbcoin"] || 0) < 1) return showToast("❌ Not enough dxbcoin to skip.");
+
+  inv["dxbcoin"] -= 1;
+  if (inv["dxbcoin"] <= 0) delete inv["dxbcoin"];
+
+  const income = businessState.income;
+  currentUser.balance += income;
+
+  businessState = null;
+  currentUser.businessState = null;
+
+  await db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    inventory: inv,
+    businessState: null
+  });
+
+  await addHistory("Business Skipped", income);
+  showToast(`⏩ Business skipped! You earned 💰 ${income} cr`);
+  renderBusiness();
+  showHome();
+}
+
+   // ─────────── mini game ──────mg────────
+// ─────────── welcom ─────mg─────────
+   function renderWelcome() {
+  return `
+    <div class="text-center text-xs text-gray-500 italic">
+      🎉 Welcome to mini-game . We have more mini-game more  challenge more reward and be happy 😁 stay tuned. 🎉
+    </div>
+  `;
+}
+    // ────── clickchallenge ────mg─────
+   let clickGame = {
+  count: 0,
+  timeLeft: 7,
+  timer: null
+};
+
+function renderClickChallenge() {
+  clickGame = { count: 0, timeLeft: 7, timer: null };
+  const highScore = currentUser.clickHighScore || 0;
+
+  return `
+    <div id="clickGame" class="text-xs space-y-2 text-center">
+      <p id="clickCount">👏 Clicks: 0</p>
+      <p id="clickCountdown">⏱️ Time: 7s</p>
+      <p>🏆 High Score: ${highScore}</p>
+      <button id="tapBtn" onclick="registerClick()" class="px-3 py-1 bg-blue-500 text-white rounded disabled:opacity-50" disabled>
+        Tap Fast!
+      </button>
+      <div class="mt-2">
+        <button onclick="startClickGame()" class="text-purple-600 underline">▶️ Start</button>
+      </div>
+    </div>
+  `;
+}
+
+function startClickGame() {
+  clickGame.count = 0;
+  clickGame.timeLeft = 7;
+
+  if (clickGame.timer) clearInterval(clickGame.timer);
+
+  document.getElementById("clickCount").textContent = `👏 Clicks: 0`;
+  document.getElementById("clickCountdown").textContent = `⏱️ Time: 7s`;
+  document.getElementById("tapBtn").disabled = false;
+
+  clickGame.timer = setInterval(() => {
+    clickGame.timeLeft--;
+    document.getElementById("clickCountdown").textContent = `⏱️ Time: ${clickGame.timeLeft}s`;
+
+    if (clickGame.timeLeft <= 0) {
+      clearInterval(clickGame.timer);
+      document.getElementById("tapBtn").disabled = true;
+      finishClickGame();
+    }
+  }, 1000);
+}
+
+function registerClick() {
+  clickGame.count++;
+  document.getElementById("clickCount").textContent = `👏 Clicks: ${clickGame.count}`;
+}
+
+async function finishClickGame() {
+  const count = clickGame.count;
+  let rewardMsg = "";
+  let rewardAmount = 0;
+
+  // Check high score
+  if (!currentUser.clickHighScore || count > currentUser.clickHighScore) {
+    currentUser.clickHighScore = count;
+  }
+
+  // Reward logic
+  if (count < 47) {
+    rewardAmount = getRandomInt(5, 20);
+    currentUser.balance += rewardAmount;
+    rewardMsg = `💰 ${rewardAmount} cr`;
+    await addHistory("Click Game (low)", rewardAmount);
+  } else if (count < 60) {
+    rewardAmount = getRandomInt(1, 2);
+    currentUser.exp += rewardAmount;
+    currentUser.level = calculateLevel(currentUser.exp);
+    rewardMsg = `⭐ ${rewardAmount} EXP`;
+    await addHistory("Click Game (exp)", 0);
+  } else if (count <= 85) {
+    rewardAmount = getRandomInt(80, 190);
+    currentUser.balance += rewardAmount;
+    rewardMsg = `💰 ${rewardAmount} cr`;
+    await addHistory("Click Game (mid)", rewardAmount);
+  } else {
+    const rewardType = getRandomInt(1, 3);
+    if (rewardType === 1) {
+      rewardAmount = getRandomInt(2, 4);
+      currentUser.exp += rewardAmount;
+      currentUser.level = calculateLevel(currentUser.exp);
+      rewardMsg = `⭐ Bonus EXP +${rewardAmount}`;
+    } else if (rewardType === 2) {
+      rewardAmount = getRandomInt(75, 200);
+      currentUser.balance += rewardAmount;
+      rewardMsg = `💰 Bonus cr +${rewardAmount}`;
+    } else {
+      const item = "batery";
+      currentUser.inventory = currentUser.inventory || {};
+      currentUser.inventory[item] = (currentUser.inventory[item] || 0) + 1;
+      rewardMsg = `🎁 Found 1 ${item}!`;
+    }
+    await addHistory("Click Game (bonus)", rewardAmount || 0);
+  }
+
+  await db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    exp: currentUser.exp,
+    level: currentUser.level,
+    inventory: currentUser.inventory,
+    clickHighScore: currentUser.clickHighScore
+  });
+
+  showToast(`✅ Game Over! You clicked ${count}x. Reward: ${rewardMsg}`);
+  showHome();
+}
+    // ─────────── time game ─────mg────────
+let timerGame = {
+  isRunning: false,
+  startTime: 0,
+  target: 3.0
+};
+
+function renderTimeGame() {
+  timerGame.isRunning = false;
+  timerGame.startTime = 0;
+
+  return `
+    <div id="timeGame" class="text-xs text-center space-y-2">
+      <p>⏳ Try to stop exactly at <strong>3.00 seconds</strong>!</p>
+      <p id="timerStatus" class="font-mono text-lg">0.00s</p>
+      <button onclick="startTimeGame()" id="startTimeBtn" class="text-purple-600 underline">▶️ Start</button>
+      <button onclick="stopTimeGame()" id="stopTimeBtn" class="px-3 py-1 bg-blue-600 text-white rounded hidden">Stop</button>
+    </div>
+  `;
+}
+
+function startTimeGame() {
+  if (timerGame.isRunning) return;
+
+  timerGame.startTime = performance.now();
+  timerGame.isRunning = true;
+
+  document.getElementById("startTimeBtn").classList.add("hidden");
+  document.getElementById("stopTimeBtn").classList.remove("hidden");
+
+  updateTimerDisplay();
+}
+
+function stopTimeGame() {
+  if (!timerGame.isRunning) return;
+
+  const endTime = performance.now();
+  const elapsed = (endTime - timerGame.startTime) / 1000;
+  const diff = Math.abs(elapsed - timerGame.target);
+  timerGame.isRunning = false;
+
+  document.getElementById("startTimeBtn").classList.remove("hidden");
+  document.getElementById("stopTimeBtn").classList.add("hidden");
+
+  const timerText = `⏱️ You stopped at: ${elapsed.toFixed(2)}s (Diff: ${diff.toFixed(2)}s)`;
+  document.getElementById("timerStatus").textContent = timerText;
+
+  handleTimeGameReward(diff);
+}
+
+function updateTimerDisplay() {
+  if (!timerGame.isRunning) return;
+
+  const now = performance.now();
+  const elapsed = (now - timerGame.startTime) / 1000;
+  document.getElementById("timerStatus").textContent = `${elapsed.toFixed(2)}s`;
+
+  if (elapsed >= 5.0) {
+    stopTimeGame(); 
+    return;
+  }
+
+  requestAnimationFrame(updateTimerDisplay);
+}
+
+async function handleTimeGameReward(diff) {
+  let rewardMsg = "❌ Too far! No reward.";
+  let rewardAmount = 0;
+
+  if (diff <= 0.1) {
+    rewardAmount = 150;
+    currentUser.balance += rewardAmount;
+    rewardMsg = `🎯 Perfect! 💰 ${rewardAmount} cr`;
+  } else if (diff <= 0.25) {
+    rewardAmount = 1;
+    currentUser.exp += rewardAmount;
+    currentUser.level = calculateLevel(currentUser.exp);
+    rewardMsg = `👍 Close! ⭐ ${rewardAmount} EXP`;
+  } else if (diff <= 0.5) {
+    rewardAmount = 40;
+    currentUser.balance += rewardAmount;
+    rewardMsg = `👌 Not bad! 💰 ${rewardAmount} cr`;
+  }
+
+  await addHistory("Timer Stop Game", rewardAmount);
+  await db.users.update(currentUser.id, currentUser);
+  showToast(`🎉 ${rewardMsg}`);
+  showHome();
+}
+       // ─────────── flash tap ─────mg───────
+let flashGame = {
+  score: 0,
+  totalRounds: 15,
+  currentRound: 0,
+  timer: null,
+  isVisible: false
+};
+
+function renderFlashTap() {
+  flashGame = {
+    score: 0,
+    totalRounds: 15,
+    currentRound: 0,
+    timer: null,
+    isVisible: false
+  };
+
+  return `
+    <div class="text-center text-xs space-y-2">
+      <p>📸 Tap ONLY when object is visible!</p>
+      <p>🎯 Score: <span id="flashScore">0</span></p>
+      <button onclick="startFlashTap()" class="text-purple-600 underline">▶️ Start</button>
+      <div class="h-24 flex items-center justify-center mt-2">
+        <div id="flashBox" class="w-16 h-16 bg-white rounded-full"></div>
+      </div>
+      <button onclick="tapFlash()" id="tapFlashBtn" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded disabled:opacity-50" disabled>Tap!</button>
+    </div>
+  `;
+}
+
+function startFlashTap() {
+  document.getElementById("tapFlashBtn").disabled = false;
+  nextFlashRound();
+}
+
+function nextFlashRound() {
+  if (flashGame.currentRound >= flashGame.totalRounds) {
+    return finishFlashTap();
+  }
+
+  flashGame.currentRound++;
+  const box = document.getElementById("flashBox");
+  box.classList.remove("bg-gray-200");
+  flashGame.isVisible = false;
+
+  // wait random time then flash
+const delay = getRandomInt(1000, 2000);
+setTimeout(() => {
+flashGame.isVisible = true;
+box.classList.add("bg-gray-200");
+setTimeout(() => {
+box.classList.remove("bg-gray-200");
+flashGame.isVisible = false;
+nextFlashRound(); // proceed even if no tap
+}, 400);
+}, delay);
+}
+
+function tapFlash() {
+  if (flashGame.isVisible) {
+    flashGame.score++;
+  } else {
+    flashGame.score = Math.max(0, flashGame.score - 1); // penalty
+  }
+  document.getElementById("flashScore").textContent = flashGame.score;
+}
+
+async function finishFlashTap() {
+  document.getElementById("tapFlashBtn").disabled = true;
+  let rewardMsg = "❌ No reward";
+  let rewardAmount = 0;
+
+  const score = flashGame.score;
+  if (score < 3) {
+    rewardMsg = "❌ No reward";
+  } else if (score < 7) {
+    rewardAmount = getRandomInt(10, 30);
+    currentUser.balance += rewardAmount;
+    rewardMsg = `💰 ${rewardAmount} cr`;
+  } else if (score <= 10) {
+    rewardAmount = getRandomInt(1, 2);
+    currentUser.exp += rewardAmount;
+    rewardMsg = `⭐ ${rewardAmount} EXP`;
+  } else {
+    const rewardType = getRandomInt(1, 3);
+    if (rewardType === 1) {
+      rewardAmount = getRandomInt(3, 5);
+      currentUser.exp += rewardAmount;
+      rewardMsg = `⭐ Bonus EXP +${rewardAmount}`;
+    } else if (rewardType === 2) {
+      rewardAmount = getRandomInt(100, 200);
+      currentUser.balance += rewardAmount;
+      rewardMsg = `💰 Bonus cr +${rewardAmount}`;
+    } else {
+      const item = "batery";
+      currentUser.inventory = currentUser.inventory || {};
+      currentUser.inventory[item] = (currentUser.inventory[item] || 0) + 1;
+      rewardMsg = `🎁 Found 1 ${item}`;
+    }
+  }
+
+  currentUser.level = calculateLevel(currentUser.exp);
+  await addHistory("Flash Tap", rewardAmount || 0);
+  await db.users.update(currentUser.id, currentUser);
+  showToast(`🎉 Flash Tap Done! ${rewardMsg}`);
+  showHome();
+}
+     // ─────────── defuse state ─────mg─────────
+let defuseState = {
+  correctWire: null,
+  timer: null,
+  timeLeft: 10,
+  clicked: false,
+  started: false
+};
+
+function renderDefuseGame() {
+  defuseState = {
+    correctWire: getRandomInt(1, 5),
+    timer: null,
+    timeLeft: 10,
+    clicked: false,
+    started: false
+  };
+
+  const wires = [];
+  for (let i = 1; i <= 5; i++) {
+    wires.push(`<button id="wire${i}" onclick="chooseWire(${i})" disabled class="px-3 py-1 bg-red-500 text-white rounded opacity-50">Wire ${i}</button>`);
+  }
+
+  return `
+    <div class="text-center text-xs space-y-2">
+      <p>💣 Defuse the bomb! Tap the correct wire within 10 seconds.</p>
+      <p id="defuseTimer">⏳ Press start</p>
+      <div class="flex flex-wrap justify-center gap-2">${wires.join("")}</div>
+      <button onclick="startDefuseTimer()" class="text-purple-600 underline">▶️ Start</button>
+    </div>
+  `;
+}
+
+function startDefuseTimer() {
+  if (defuseState.started) return;
+  defuseState.started = true;
+  defuseState.timeLeft = 10;
+
+  document.getElementById("defuseTimer").textContent = `⏳ Time: 10s`;
+
+  // Enable wires
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.getElementById(`wire${i}`);
+    btn.disabled = false;
+    btn.classList.remove("opacity-50");
+  }
+
+  defuseState.timer = setInterval(() => {
+    defuseState.timeLeft--;
+    if (defuseState.timeLeft <= 0 && !defuseState.clicked) {
+      clearInterval(defuseState.timer);
+      showToast("💥 Time's up! The bomb exploded!");
+      showHome();
+    }
+    if (!defuseState.clicked) {
+      document.getElementById("defuseTimer").textContent = `⏳ Time: ${defuseState.timeLeft}s`;
+    }
+  }, 1000);
+}
+
+async function chooseWire(i) {
+  if (defuseState.clicked || !defuseState.started) return;
+  defuseState.clicked = true;
+  clearInterval(defuseState.timer);
+
+  for (let j = 1; j <= 5; j++) {
+    document.getElementById(`wire${j}`).disabled = true;
+  }
+
+  if (i === defuseState.correctWire) {
+    let rewardMsg = "";
+    const type = getRandomInt(1, 3); // 1: cxzh, 2: exp, 3: item
+    if (type === 1) {
+      const amt = getRandomInt(50, 150);
+      currentUser.balance += amt;
+      rewardMsg = `💰 ${amt} cr`;
+      await addHistory("Defuse Game", amt);
+    } else if (type === 2) {
+      const amt = getRandomInt(1, 3);
+      currentUser.exp += amt;
+      currentUser.level = calculateLevel(currentUser.exp);
+      rewardMsg = `⭐ ${amt} EXP`;
+      await addHistory("Defuse Game", 0);
+    } else {
+      const item = "batery";
+      currentUser.inventory = currentUser.inventory || {};
+      currentUser.inventory[item] = (currentUser.inventory[item] || 0) + 1;
+      rewardMsg = `🎁 1 ${item}`;
+      await addHistory("Defuse Game", 0);
+    }
+
+    await db.users.update(currentUser.id, currentUser);
+    showToast(`✅ Bomb defused! Reward: ${rewardMsg}`);
+  } else {
+    showToast("💥 Wrong wire! The bomb exploded!");
+  }
+
+  showHome();
+}
+   // ─────────── memory maze ─────mg─────
+   let mazeState = {
+  path: [],
+  playerPath: [],
+  showTime: 1000,
+  stage: "start"
+};
+
+function renderMemoryMaze() {
+  mazeState = {
+    path: [],
+    playerPath: [],
+    showTime: 1000,
+    stage: "start"
+  };
+
+  return `
+    <div class="text-center text-xs space-y-2">
+      <p>🧠 Memory Maze! Tap Start to begin.</p>
+      <button onclick="startMemoryMaze()" class="text-purple-600 underline">▶️ Start</button>
+      <div id="mazeGrid" class="mt-2"></div>
+    </div>
+  `;
+}
+
+function startMemoryMaze() {
+  mazeState.path = generateMazePath(8);
+  mazeState.playerPath = [];
+  mazeState.stage = "preview";
+
+  const grid = Array.from({ length: 16 }, (_, i) => {
+    const highlight = mazeState.path.includes(i) ? 'bg-purple-300' : 'bg-blue-200';
+    return `<div class="w-12 h-12 rounded flex items-center justify-center ${highlight}" id="maze-${i}">?</div>`;
+  }).join("");
+
+  document.getElementById("mazeGrid").innerHTML = `
+    <p>🧠 Memorize the path!</p>
+    <div class="grid grid-cols-4 gap-2 justify-center">${grid}</div>
+  `;
+
+  setTimeout(() => {
+    mazeState.stage = "input";
+    renderMazeGrid();
+  }, mazeState.showTime);
+}
+
+function renderMazeGrid() {
+  const grid = Array.from({ length: 16 }, (_, i) => {
+    const isClicked = mazeState.playerPath.includes(i);
+    return `
+      <button onclick="selectMazeTile(${i})"
+        class="w-12 h-12 rounded ${isClicked ? 'bg-yellow-600' : 'bg-blue-200'}">
+        ${isClicked ? '✔' : '?'}</button>
+    `;
+  }).join("");
+
+  document.getElementById("mazeGrid").innerHTML = `
+    <p>🔍 Repeat the path!</p>
+    <div class="grid grid-cols-4 gap-2 justify-center">${grid}</div>
+  `;
+}
+
+function selectMazeTile(index) {
+  if (mazeState.stage !== "input" || mazeState.playerPath.includes(index)) return;
+
+  // ❌ Salah tekan terus tamat
+  if (!mazeState.path.includes(index)) {
+    mazeState.stage = "done";
+    showToast("❌ Wrong tile! Game over.");
+    showHome();
+    return;
+  }
+
+  mazeState.playerPath.push(index);
+  renderMazeGrid();
+
+  if (mazeState.playerPath.length === mazeState.path.length) {
+    finishMemoryMaze();
+  }
+}
+
+async function finishMemoryMaze() {
+  mazeState.stage = "done";
+
+  let rewardMsg = "❌ Wrong sequence!";
+  let rewardAmount = 0;
+
+  const type = getRandomInt(1, 3);
+  if (type === 1) {
+    rewardAmount = getRandomInt(40, 100);
+    currentUser.balance += rewardAmount;
+    rewardMsg = `💰 ${rewardAmount} cr`;
+  } else if (type === 2) {
+    rewardAmount = getRandomInt(1, 2);
+    currentUser.exp += rewardAmount;
+    currentUser.level = calculateLevel(currentUser.exp);
+    rewardMsg = `⭐ ${rewardAmount} EXP`;
+  } else {
+    const item = "batery";
+    currentUser.inventory = currentUser.inventory || {};
+    currentUser.inventory[item] = (currentUser.inventory[item] || 0) + 1;
+    rewardMsg = `🎁 1 ${item}`;
+  }
+
+  await db.users.update(currentUser.id, currentUser);
+  await addHistory("Memory Maze", rewardAmount);
+  showToast(`🎯 ${rewardMsg}`);
+  showHome();
+}
+
+function generateMazePath(length = 8) {
+  const path = [];
+  while (path.length < length) {
+    const next = getRandomInt(0, 15);
+    if (!path.includes(next)) path.push(next);
+  }
+  return path;
+}
+    // ─────────── coming soon ─────mg─────────
+   function renderComingSoon() {
+  return `
+    <div class="text-center text-xs text-gray-500 italic">
+      🔒 This mini-game is under development. Stay tuned! 🔒
+    </div>
+  `;
+}
+     // ─────── render mini game ─────mg────────
+   const miniGameList = [
+  ["welcome", "🎉 Welcome To Mini Game", renderWelcome],
+  ["clickChallenge", "🖱️ Speed Click", renderClickChallenge],
+  ["timeGame", "⌛ Tap Timer", renderTimeGame],
+  ["flashGame",  "📸 Flash Tap", renderFlashTap],
+  ["defuseGame",  "💣 Tap to Defuse", renderDefuseGame],
+  ["memoryMaze", "🧠 Memory Maze", renderMemoryMaze],
+  ["comingSoon", "🔒 New Game Coming Soon", renderComingSoon]
+].map(([id, title, render]) => ({ id, title, render }));
+
+let miniGamePage = 0;
+     function renderMiniGame() {
+  const container = document.getElementById("miniGameContainer");
+  container.innerHTML = "";
+  const game = miniGameList[miniGamePage];
+  const gameBox = document.createElement("div");
+  gameBox.className = "space-y-2";
+  const title = `<h3 class="font-bold text-sm">${game.title}</h3>`;
+  const content = game.render();
+  const totalPages = miniGameList.length;
+  const prevDisabled = miniGamePage <= 0 ? "opacity-50 pointer-events-none" : "";
+  const nextDisabled = miniGamePage >= totalPages - 1 ? "opacity-50 pointer-events-none" : "";
+  const nav = `
+    <div class="text-center text-xs pt-1">
+      <button onclick="prevMiniGame()" class="px-2 ${prevDisabled}">⬅️</button>
+      <span class="mx-2">Page ${miniGamePage + 1} of ${totalPages}</span>
+      <button onclick="nextMiniGame()" class="px-2 ${nextDisabled}">➡️</button>
+    </div>
+  `;
+  gameBox.innerHTML = title + content + nav;
+  container.appendChild(gameBox);
+}
+function prevMiniGame() {
+  if (miniGamePage > 0) {
+    miniGamePage--;
+    renderMiniGame();
+  }
+}
+function nextMiniGame() {
+  if (miniGamePage < miniGameList.length - 1) {
+    miniGamePage++;
+    renderMiniGame();
+  }
+}
+  // ─────── render mini game ─────mg────────//
+
+
+
+  </script>
+
+  <style>
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadein {
+      animation: fadein 0.3s ease-out;
+    }
+  </style>
+</body>
+</html>
