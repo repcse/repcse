@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qxp</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/dexie@3.2.2/dist/dexie.min.js"></script>
+</head>
+<body class="bg-white text-black min-h-screen p-4 font-mono">
+
+  <!-- Header -->
+  <header class="text-center mb-6">
+    <h1 class="text-2xl font-bold uppercase">qxp (lite)</h1>
+    <p class="text-sm text-gray-500">By E-King 👑 & GPT-xz 🪆</p>
+  </header>
+
+  <!-- Screen: Login -->
+  <section id="loginScreen" class="max-w-sm mx-auto space-y-4">
+    <input id="username" type="text" placeholder="Username"
+      class="w-full border p-2 rounded" />
+    <input id="password" type="password" placeholder="Password"
+      class="w-full border p-2 rounded" />
+    <div class="flex gap-2">
+  <button id="loginBtn"
+    class="flex-1 bg-black text-white py-2 rounded hover:bg-gray-800">📝Login/Signup</button>
+  <input type="file" id="importFile" accept=".json" class="hidden" onchange="loadUserData(event)" />
+  <button onclick="document.getElementById('importFile').click()"
+    class="bg-yellow-600 text-white px-3 py-2 rounded hover:bg-yellow-700">📁load</button>
+</div>
+  </section>
+
+  <!-- Screen: Home (Hidden Initially) -->
+  <section id="homeScreen" class="hidden max-w-sm mx-auto mt-6 space-y-4">
+    <div class="text-center">
+      <h2 class="text-lg font-bold">🎉 Welcome, <span id="userDisplay"></span></h2>
+    </div>
+      <!-- Status Table -->
+<div class="bg-gray-100 border rounded p-4 overflow-x-auto">
+  <table class="w-full text-center text-sm">
+    <thead>
+      <tr class="font-semibold bg-gray-200">
+        <th>Balance (cxzh)</th>
+        <th>Level</th>
+        <th>EXP</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span id="balance">0</span></td>
+        <td><span id="level">1</span></td>
+        <td><span id="exp">0</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+       <!-- Combined Button Bar -->
+<div class="flex flex-wrap gap-2 justify-center mt-4">
+  <button id="claimBtn" class="bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-700">Claim</button>
+  <button onclick="saveUserData()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">💾Save</button>
+  <input type="file" id="importFile" accept=".json" class="hidden" onchange="loadUserData(event)" />
+  <button onclick="document.getElementById('importFile').click()" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">📁Load</button>
+</div>
+
+  <div class="grid grid-cols-3 gap-4 text-4xl p-4 text-center">
+     <button onclick="showSecondScreen()" class="bg-gray-100 rounded-2xl p-4 shadow">📦</button>
+     <button onclick="showThreeScreen()" class="bg-gray-100 rounded-2xl p-4 shadow">⛺</button>
+     <button onclick="showFourScreen()" class="bg-gray-100 rounded-2xl p-4 shadow">📊</button>
+        <button onclick="showTenScreen()" class="bg-gray-100 rounded-2xl p-4 shadow">🏦</button>
+        <button onclick="showFiveScreen()" class="bg-gray-100 rounded-2xl p-4 shadow">🦅</button>
+       <button onclick="showSixScreen()" class="bg-gray-100 rounded-2xl p-4 shadow">🏋️</button>
+        </div>
+    </section>
+
+      <!-- Screen: second (Hidden Initially) -->
+   <section id="secondScreen" class="hidden max-w-sm mx-auto mt-6 space-y-4">
+      <!-- Biz Table -->
+<div class="bg-white border p-4 rounded space-y-2">
+<div id="bizLocked" class="text-center text-gray-500">Biz akan unlock bila Level 3 🛠️</div>
+<div id="bizTable" class="hidden"></div>  </div>
+   <button onclick="switchToScreen('homeScreen')" class="mb-4 text-blue-600 underline">⬅️ back</button>
+    </section>
+
+     <!-- Screen: three (Hidden Initially) -->
+  <section id="threeScreen" class="hidden max-w-sm mx-auto mt-6 space-y-4">
+      <!-- Den Inventory Table -->
+<div class="bg-white border p-4 rounded space-y-2">
+  <h3 class="font-bold text-lg">⛺ Den</h3>
+  <div id="denTable" class="text-xs"></div>
+</div>
+   <button onclick="switchToScreen('homeScreen')" class="mb-4 text-blue-600 underline">⬅️ back</button>
+     </section>
+    
+    <!-- Screen: four (Hidden Initially) -->
+  <section id="fourScreen" class="hidden max-w-sm mx-auto mt-6 space-y-4">
+      <!-- Market Section -->
+<div class="bg-white border p-4 rounded space-y-2">
+  <h3 class="font-bold text-lg">📊 Market</h3>
+  <table class="w-full text-xs">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Price</th>
+        <th>Buy</th>
+        <th>Sell</th>
+      </tr>
+    </thead>
+    <tbody id="marketTable"></tbody>
+  </table>
+</div>
+   <button onclick="switchToScreen('homeScreen')" class="mb-4 text-blue-600 underline">⬅️ back</button>
+  </section>
+
+     <!-- Screen: ten (Hidden Initially) -->
+  <section id="tenScreen" class="hidden max-w-sm mx-auto mt-6 space-y-4">
+    <!-- Cxzh Section -->
+<div class="bg-white border p-4 rounded space-y-2">
+  <h3 class="font-bold text-lg">💰 Bank & CXZH</h3>
+  <div class="flex justify-between text-sm">
+    <button id="interestBtn" class="bg-purple-500 text-white px-2 py-1 rounded">+1% Interest</button>
+    <button id="exportBtn" class="bg-gray-800 text-white px-2 py-1 rounded">Export Summary</button>
+  </div>
+  <table class="w-full text-xs mt-2">
+    <thead>
+      <tr>
+        <th class="text-left">#</th>
+        <th class="text-left">Type</th>
+        <th class="text-right">Amount</th>
+        <th class="text-right">Date</th>
+      </tr>
+    </thead>
+    <tbody id="historyTable"></tbody>
+  </table>
+</div>
+      <button onclick="switchToScreen('homeScreen')" class="mb-4 text-blue-600 underline">⬅️ back</button>
+  </section>
+
+      <!-- Screen: five (Hidden Initially) -->
+<section id="fiveScreen" class="hidden p-4 space-y-4">
+  <h2 class="text-xl font-bold">🦅 birdHQ</h2>
+  <div class="bg-white p-3 border rounded">
+    <p class="text-sm">Current Job:</p>
+    <div id="jobInfo" class="text-xs text-gray-700"></div>
+  </div>
+  <div class="flex gap-2">
+    <button id="claimJobBtn" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Claim Job</button>
+    <button id="deliverJobBtn" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Deliver</button>
+  </div>
+  <div class="bg-gray-100 p-3 border rounded text-xs">
+    <p class="font-bold mb-2">Delivery Inventory:</p>
+    <ul id="deliveryInventoryList"></ul>
+  </div>
+<div class="bg-white p-2 mt-4 border rounded text-xs">
+  <p class="font-bold mb-1">History Terkini:</p>
+  <ul id="deliveryHistoryList" class="space-y-1"></ul>
+</div>
+      <button onclick="switchToScreen('homeScreen')" class="mb-4 text-blue-600 underline">⬅️ back</button>
+</section>
+
+ 
+      <!-- Screen: six (Hidden Initially) -->
+<section id="sixScreen" class="hidden p-4 bg-gray-950 text-white space-y-4">
+  <h2 class="text-xl font-bold text-green-400 mb-2">🏋️ Gym</h2>
+        <!-- Gym Table Inject -->
+  <div id="gymTable" class="p-3 bg-gray-900 rounded-lg shadow-md border border-gray-700"></div>
+     <button onclick="switchToScreen('homeScreen')" class="mb-4 text-blue-600 underline">⬅️ back</button>
+    </section>
+
+
+     <!-- Toast Container -->
+<div id="toastBox" class="hidden fixed bottom-4 right-4 flex flex-col gap-2 z-50"></div>
+
+
+  <!-- JS Area -->
+
+  <script>
+    // ─────────── DB ───────────────────
+
+    const db = new Dexie("0-0-9-db");
+    db.version(1).stores({
+      users: "++id,username,password,balance,exp,level,lastClaim",
+    });
+    db.open().then(() => {
+  createAdminUser();
+});
+
+
+    // ─────────── ELEMENT REFS ───────────────────
+    
+    const loginBtn = document.getElementById("loginBtn");
+    const claimBtn = document.getElementById("claimBtn");
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const userDisplay = document.getElementById("userDisplay");
+    const balanceDisplay = document.getElementById("balance");
+    const expDisplay = document.getElementById("exp");
+    const levelDisplay = document.getElementById("level");
+    const toastBox = document.getElementById("toastBox");
+
+    let currentUser = null;
+
+    // ─────────── SHOW TOAST ───────────────────
+
+    function showToast(message, screenId = null) {
+  const toastBox = document.getElementById("toastBox");
+  toastBox.classList.remove("hidden");
+
+  // Buat toast element
+  const toast = document.createElement("div");
+  toast.className = "bg-gray-800 text-white px-4 py-2 rounded shadow text-sm opacity-100 transition-opacity duration-300 animate-fadein";
+  toast.textContent = message;
+
+  // Tambah toast ke container
+  toastBox.appendChild(toast);
+
+  // Kalau lebih 5 → buang yang paling awal
+  if (toastBox.children.length > 5) {
+    toastBox.removeChild(toastBox.children[0]);
+  }
+
+  // Auto fade + remove
+  setTimeout(() => {
+    toast.classList.add("opacity-0");
+    setTimeout(() => {
+      toast.remove();
+      if (toastBox.children.length === 0) {
+        toastBox.classList.add("hidden");
+      }
+    }, 300);
+  }, 3000);
+
+  // Jika dalam screen khusus
+  if (screenId) {
+    const screen = document.getElementById(screenId);
+    screen.appendChild(toastBox);
+    toastBox.classList.remove("fixed");
+    toastBox.classList.add("absolute", "bottom-2", "right-2");
+  } else {
+    document.body.appendChild(toastBox);
+    toastBox.classList.remove("absolute");
+    toastBox.classList.add("fixed", "bottom-4", "right-4");
+  }
+}
+    
+    // ─────────── EXP LEVEL  ───────────────────
+
+    function calculateLevel(exp) {
+      let lvl = 1;
+      while (exp >= lvl * 3333 && lvl < 33) {
+        lvl++;
+      }
+      return lvl;
+    }
+
+   // ─────────── LOGIN SIGNUP ───────────────────
+
+async function createAdminUser() {
+  const exists = await db.users.where("username").equals("eking").first();
+  if (!exists) {
+    await db.users.add({
+      username: "eking",
+      password: "admin220700",
+      balance: 999999,
+      exp: 999999,
+      level: 33,
+      lastClaim: null,
+      deliveryHistory: [],
+      deliveryCount: 999999,
+      streak: 50,
+      maxStreak: 50,
+      reputation: 100,
+      noteLog: ["Admin telah dihantar dari langit."],
+      jobCooldown: 0,
+      lastJobTime: Date.now() - 100000, 
+    });
+
+    console.log("Admin akaun 'eking' dicipta (MAX ABILITY)");
+  }
+}
+    loginBtn.addEventListener("click", async () => {
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+      if (!username || !password) return showToast("Sila for isi semua ruangan.");
+      let user = await db.users.where({ username }).first();
+      if (!user) {
+        // Signup
+        await db.users.add({
+          username,
+          password,
+          balance: 0,
+          exp: 0,
+          level: 1,
+          lastClaim: null
+        });
+        user = await db.users.where({ username }).first();
+        showToast("🪪 Akaun baru dibuat!");
+      } else if (user.password !== password) {
+        return showToast("❗ Password salah!");
+      }
+
+      currentUser = user;
+      usernameInput.value = "";
+      passwordInput.value = "";
+      showHome();
+    });
+
+
+    // ─────────── UI SCREEN ───────────────────
+
+    function switchToScreen(screenId) {
+
+document.querySelectorAll("section").forEach(sec => sec.classList.add("hidden"));
+    document.getElementById(screenId).classList.remove("hidden");
+
+}
+
+function renderAll() {
+  if (!currentUser) return;
+  const visibleScreen = [...document.querySelectorAll("section")].find(sec => !sec.classList.contains("hidden"));
+  const screenId = visibleScreen?.id;
+  if (screenId === "homeScreen") {
+    userDisplay.textContent = currentUser.username;
+    balanceDisplay.textContent = currentUser.balance;
+    expDisplay.textContent = currentUser.exp;
+    levelDisplay.textContent = currentUser.level;
+    renderHistory();
+  }
+  if (screenId === "secondScreen") {
+    renderBiz();
+  }
+  if (screenId === "threeScreen") {
+    renderDen();
+  }
+  if (screenId === "fourScreen") {
+    renderMarket();
+  }
+  if (screenId === "tenScreen") {
+    renderHistory();
+  }
+  if (screenId === "fiveScreen") {
+    renderBirdHQ();
+  }
+  if (screenId === "sixScreen") {
+    renderGymUI();
+  }
+}
+
+setInterval(renderAll, 1000); // update UI setiap 1s
+
+
+    // ─────────── HOME claim save load ────────────
+
+async function showHome() {
+  switchToScreen("homeScreen");
+
+  currentUser.inventory = currentUser.inventory || {};
+
+  userDisplay.textContent = currentUser.username;
+  balanceDisplay.textContent = currentUser.balance;
+  expDisplay.textContent = currentUser.exp;
+  levelDisplay.textContent = currentUser.level;
+
+}
+
+// CLAIMDAILY
+claimBtn.addEventListener("click", async () => {
+      const now = new Date();
+      const last = new Date(currentUser.lastClaim || 0);
+      const diff = now - last;
+      if (diff < 86400000) return showToast("Dah claim hari ni.");
+      currentUser.balance += 100;
+      currentUser.exp += 15;
+      currentUser.lastClaim = now;
+      currentUser.level = calculateLevel(currentUser.exp);
+      await db.users.update(currentUser.id, currentUser);
+      showToast("💰 +100 cxzh dikreditkan!");
+      showHome();
+    });
+
+//  Save currentUser data as JSON file
+function saveUserData() {
+  if (!currentUser) return showToast("Tiada user aktif");
+  const data = JSON.stringify(currentUser, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `qxp-${currentUser.username}.qxp.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("📤 Data berjaya disimpan");
+}
+
+//  Load JSON file into current DB
+async function loadUserData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      // Overwrite user in DB with same ID or new
+      const existing = await db.users.get(imported.id);
+      if (existing) {
+        await db.users.update(imported.id, imported);
+      } else {
+        await db.users.add(imported);
+      }
+      currentUser = imported;
+      await db.users.update(currentUser.id, currentUser);
+      showToast("📥 Data berjaya dimuat naik");
+      showHome();
+      renderAll();
+    } catch (err) {
+      showToast("Fail tidak sah");
+    }
+  };
+  reader.readAsText(file);
+}
+
+
+
+ // ───────── TEN history interest summary ────────
+
+
+function showTenScreen() {
+  switchToScreen("tenScreen");
+  renderHistory();
+}
+
+// Transaction history log
+async function addHistory(type, amount) {
+  currentUser.history = currentUser.history || [];
+  currentUser.history.push({
+    type,
+    amount,
+    date: new Date().toISOString()
+  });
+  if (currentUser.history.length > 25) currentUser.history.shift(); // limit to 25
+  await db.users.update(currentUser.id, { history: currentUser.history });
+  renderHistory();
+}
+function renderHistory() {
+  const table = document.getElementById("historyTable");
+  table.innerHTML = "";
+  (currentUser.history || []).slice().reverse().forEach((tx, i) => {
+    table.innerHTML += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${tx.type}</td>
+        <td class="text-right">${tx.amount}</td>
+        <td class="text-right">${new Date(tx.date).toLocaleDateString()}</td>
+      </tr>
+    `;
+  });
+}
+
+// INTEREST 1%
+document.getElementById("interestBtn").addEventListener("click", async () => {
+  if (!currentUser) return;
+  const now = Date.now();
+  const last = currentUser.lastInterest ?? 0;
+  const cooldown = 60 * 60 * 1000; // 1 jam = 3600000 ms
+  if (now - last < cooldown) {
+    const minLeft = Math.ceil((cooldown - (now - last)) / 60000);
+    showToast(`⏳ Kena tunggu ${minLeft} minit lagi untuk claim faedah.`, "tenScreen");
+    return;
+  }
+  const bonus = Math.floor(currentUser.balance * 0.01);
+  if (bonus <= 0) {
+    showToast("❗ Balance terlalu rendah untuk dapat faedah.", "tenScreen");
+    return;
+  }
+  currentUser.balance += bonus;
+  currentUser.lastInterest = now;
+  await addHistory("interest", bonus);
+  await db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    lastInterest: now
+  });
+  showToast(`💲 +${bonus} cxzh dari faedah!`, "tenScreen");
+  renderHistory();
+});
+
+// SUMMARRY
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const report = {
+    user: currentUser.username,
+    balance: currentUser.balance,
+    exp: currentUser.exp,
+    level: currentUser.level,
+    history: currentUser.history || []
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${currentUser.username}_report.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+
+
+     // ─────────── SECOND biz ────────────────
+
+function showSecondScreen() {
+  switchToScreen("secondScreen");
+
+  ensureBizData(); 
+
+  if (currentUser.level === 3 && !currentUser.bizUnlockedNotified) {
+    showToast("🎉 Biz system kini dibuka!", "homeScreen");
+    currentUser.bizUnlockedNotified = true;
+    db.users.update(currentUser.id, { bizUnlockedNotified: true });
+  }
+  renderBiz();
+}
+
+
+// BIZ SYSTEM
+const bizTypes = [
+  { type: "letter", item: "paper", profitMin: 129, profitMax: 250, startup: 37377 },
+  { type: "stamp", item: "cop", profitMin: 140, profitMax: 260, startup: 39399 },
+  { type: "seller", item: "book", profitMin: 138, profitMax: 250, startup: 38388 },
+  { type: "featherfax", item: "feather", profitMin: 150, profitMax: 270, startup: 40222 },
+  { type: "parcel", item: "box", profitMin: 160, profitMax: 290, startup: 41777 },
+  { type: "birdgram", item: "msg", profitMin: 170, profitMax: 310, startup: 43999 },
+  { type: "nestmart", item: "seed", profitMin: 155, profitMax: 275, startup: 40999 },
+  { type: "wingprint", item: "ink", profitMin: 145, profitMax: 260, startup: 39888 },
+  { type: "cloudtap", item: "code", profitMin: 180, profitMax: 333, startup: 45333 },
+  { type: "glitchcart", item: "chip", profitMin: 190, profitMax: 360, startup: 47000 },
+];
+
+// Auto init biz data per user
+function ensureBizData() {
+  currentUser.bizData = currentUser.bizData || {};
+  bizTypes.forEach(biz => {
+    if (!currentUser.bizData[biz.type]) {
+      currentUser.bizData[biz.type] = {
+        started: false,
+        on: false,
+        qty: 0
+      };
+    }
+  });
+}
+
+// Render biz UI
+function renderBiz() {
+  ensureBizData();
+
+  const bizLocked = document.getElementById("bizLocked");
+  const container = document.getElementById("bizTable");
+
+  if (currentUser.level < 3) {
+    bizLocked.classList.remove("hidden");
+    container.classList.add("hidden");
+    return;
+  } else {
+    bizLocked.classList.add("hidden");
+    container.classList.remove("hidden");
+  }
+
+  let html = "<table class='w-full text-sm'><tr><th>BizType</th><th>Item</th><th>Qty</th><th>Profit</th><th>Power</th><th>Action</th></tr>";
+
+  bizTypes.forEach(biz => {
+    const data = currentUser.bizData[biz.type];
+    const status = data.on ? "ON" : "OFF";
+    const action = data.started
+      ? `<button onclick="toggleBiz('${biz.type}')" class="text-blue-600 underline">ON/OFF</button>
+         <button onclick="sellBiz('${biz.type}')" class="text-red-600 underline">SELL</button>`
+      : `<button onclick="startBiz('${biz.type}', ${biz.startup})" class="text-green-600 underline">BUY (${biz.startup})</button>`;
+
+    html += `
+      <tr>
+        <td class="capitalize">${biz.type}</td>
+        <td>${biz.item}</td>
+        <td>${currentUser.inventory?.[biz.item] || 0}</td>
+        <td>${biz.profitMin}–${biz.profitMax}</td>
+        <td>${status}</td>
+        <td>${action}</td>
+      </tr>
+    `;
+  });
+
+  html += "</table>";
+  container.innerHTML = html;
+}
+
+async function startBiz(type, cost) {
+  const biz = currentUser.bizData[type];
+  if (biz.started) return showToast("❗ Biz sudah dimiliki.", "secondScreen");
+  if (currentUser.balance < cost) return showToast("Tak cukup cxzh!");
+  currentUser.balance -= cost;
+  biz.started = true;
+  currentUser.exp += 100;
+  currentUser.level = calculateLevel(currentUser.exp);
+  await db.users.update(currentUser.id, { balance: currentUser.balance, bizData: currentUser.bizData, exp: currentUser.exp, level: currentUser.level });
+  showToast(`💼 Biz ${type} dimulakan!`, "secondScreen");
+  renderBiz();
+}
+
+async function toggleBiz(type) {
+  const biz = currentUser.bizData[type];
+  if (!biz.started) return showToast("❗ Biz belum dimiliki.", "secondScreen");
+  biz.on = !biz.on;
+  await db.users.update(currentUser.id, { bizData: currentUser.bizData });
+  showToast(`📴 ${type} ${biz.on ? "ON" : "OFF"}`, "secondScreen");
+  renderBiz();
+}
+
+async function sellBiz(type) {
+  const biz = currentUser.bizData[type];
+  const bizConfig = bizTypes.find(b => b.type === type);
+  if (!biz.started) return showToast("❗ Belum beli biz.", "secondScreen");
+  // Optional: bagi balik 50% dari kos
+  const refund = Math.floor(bizConfig.startup * 0.5);
+  currentUser.balance += refund;
+  // Reset biz data
+  biz.started = false;
+  biz.on = false;
+  await db.users.update(currentUser.id, {
+    bizData: currentUser.bizData,
+    balance: currentUser.balance
+  });
+  showToast(`💸 Biz ${type} dijual. +${refund} cxzh`, "secondScreen");
+  renderBiz();
+}
+
+// Biz profit generator (every 10s)
+setInterval(async () => {
+  if (!currentUser || !currentUser.bizData) return;
+  const inv = currentUser.inventory || {};
+
+  for (const biz of bizTypes) {
+    const data = currentUser.bizData[biz.type];
+    if (!data.started || !data.on) continue;
+
+    const item = biz.item;
+    if (!inv[item] || inv[item] <= 0) continue;
+
+    const profit = Math.floor(Math.random() * (biz.profitMax - biz.profitMin + 1)) + biz.profitMin;
+    inv[item] -= 1;
+    currentUser.balance += profit;
+    await addHistory(`biz:${biz.type}`, profit);
+    showToast(`💲 Profit ${biz.type}: +${profit} cxzh`, "secondScreen");
+  }
+
+  await db.users.update(currentUser.id, { inventory: inv, balance: currentUser.balance });
+  renderBiz();
+}, 10000);
+
+
+
+
+    // ─────────── THREE den ────────────────
+
+
+function showThreeScreen() {
+  switchToScreen("threeScreen");
+  renderDen();
+}
+
+// DEN
+  function renderDen() {
+  const container = document.getElementById("denTable");
+  const inv = currentUser.inventory || {};
+  let pagerDurability = currentUser.pagerDurability ?? 100;
+  let html = "<table class='w-full'><tr><th>Item</th><th>Qty</th><th>Durability</th><th>Action</th></tr>";
+  for (let item in inv) {
+    if (inv[item] <= 0) continue;
+    let dur = (item === "pager") ? `${pagerDurability}%` : "-";
+    let action = "";
+    if (item === "batery") {
+      action = `<button onclick="useBatery()" class="text-blue-600 underline">Use</button>`;
+    } else if (item === "pager") {
+      action = `<button onclick="togglePager()" class="text-purple-600 underline">${currentUser.pagerOn ? "OFF" : "ON"}</button>`;
+    } else if (item === "paper") {
+      action = `-`;
+    }
+    html += `<tr>
+      <td class="capitalize">${item}</td>
+      <td>${inv[item]}</td>
+      <td>${dur}</td>
+      <td>${action}</td>
+    </tr>`;
+  }
+  html += "</table>";
+  container.innerHTML = html;
+}
+
+// Pager ON/OFF logic
+function togglePager() {
+  currentUser.pagerOn = !currentUser.pagerOn;
+  showToast(`📴 Pager turned ${currentUser.pagerOn ? "ON" : "OFF"}`, "threeScreen");
+  db.users.update(currentUser.id, { pagerOn: currentUser.pagerOn });
+  renderDen();
+}
+
+// Batery use
+async function useBatery() {
+  const inv = currentUser.inventory || {};
+  let dur = currentUser.pagerDurability ?? 100;
+  if (!inv["batery"] || inv["batery"] <= 0) return showToast("No battery!", "threeScreen");
+  if (!inv["pager"] || inv["pager"] <= 0) return showToast("❎ No pager!", "threeScreen");
+  const space = 100 - dur;
+  if (space <= 0) return showToast("🔋 Pager already full!", "threeScreen");
+  const needed = Math.ceil(space / 50);
+  const useNow = Math.min(needed, inv["batery"]);
+  dur += useNow * 50;
+  dur = Math.min(dur, 100);
+  inv["batery"] -= useNow;
+  currentUser.pagerDurability = dur;
+  await db.users.update(currentUser.id, { inventory: inv, pagerDurability: dur });
+  showToast(`⚡ Charged pager +${useNow * 50}%`, "threeScreen");
+  renderDen();
+}
+
+// Auto drain pager ON + earn cxzh
+setInterval(async () => {
+  if (!currentUser || !currentUser.pagerOn) return;
+  let dur = currentUser.pagerDurability ?? 100;
+  if (dur <= 0) {
+    currentUser.pagerOn = false;
+    await db.users.update(currentUser.id, { pagerOn: false });
+    showToast("🪫 Pager OFF (durability 0%)", "threeScreen");
+    renderDen();
+    return;
+  }
+
+  // drain 1% only, every 1m
+  dur = Math.max(0, dur - 1);
+  currentUser.pagerDurability = dur;
+  // profit between 1–2 cxzh
+  const profit = Math.floor(Math.random() * 2) + 1;
+  currentUser.balance += profit;
+  await addHistory("pager profit", profit);
+  await db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    pagerDurability: dur
+  });
+  showToast(`💲 Pager +${profit} cxzh`, "threeScreen");
+  renderDen;
+}, 60000); // setiap 1min
+
+
+
+    // ─────────── FOUR market ─────────────────
+
+function showFourScreen() {
+  switchToScreen("fourScreen");
+  renderMarket(); 
+}
+
+  
+    // MARKET SETUP
+const items = [
+   // den item
+  { name: "pager", base: 3733 },
+  { name: "batery", base: 237 },
+
+  // Biz item
+  { name: "paper", base: 125 },
+  { name: "cop", base: 130 },
+  { name: "book", base: 135 },
+  { name: "feather", base: 177 },
+  { name: "box", base: 199 },
+  { name: "msg", base: 144 },
+  { name: "seed", base: 123 },
+  { name: "ink", base: 142 },
+  { name: "code", base: 188 },
+  { name: "chip", base: 213 },
+
+  // GymPass
+   { name: "basic_gympass", base: 300 },
+  { name: "pro_gympass", base: 1300 },
+  { name: "elite_gympass", base: 7300 }
+];
+
+function generateMarketPrices() {
+  const prices = {};
+  items.forEach(item => {
+    const price = Math.floor(item.base * (1 + Math.random() * 0.1));
+    prices[item.name] = price;
+  });
+  return prices;
+}
+
+// Render market
+function renderMarket() {
+  const now = Date.now();
+  const lastUpdate = currentUser.lastMarketUpdate || 0;
+  const oneMinute = 60 * 1000;
+
+  // Kalau dah lebih 1 minit → buat harga baru
+  if (!currentUser.marketPrices || now - lastUpdate >= oneMinute) {
+    currentUser.marketPrices = generateMarketPrices();
+    currentUser.lastMarketUpdate = now;
+    db.users.update(currentUser.id, {
+      marketPrices: currentUser.marketPrices,
+      lastMarketUpdate: now
+    });
+  }
+
+  const table = document.getElementById("marketTable");
+  table.innerHTML = "";
+
+  items.forEach(item => {
+    const price = currentUser.marketPrices[item.name];
+
+    table.innerHTML += `
+      <tr>
+        <td class="capitalize">${item.name}</td>
+        <td>${price}</td>
+        <td><button onclick="buyItem('${item.name}', ${price})"
+            class="text-green-600 underline">Buy</button></td>
+        <td><button onclick="sellItem('${item.name}', ${price})"
+            class="text-red-600 underline">Sell</button></td>
+      </tr>
+    `;
+  });
+}
+
+async function buyItem(item, price) {
+  if (currentUser.balance < price) return showToast("Tak cukup cxzh!", "fourScreen");
+  currentUser.balance -= price;
+  currentUser.exp += 6;
+  currentUser.level = calculateLevel(currentUser.exp);
+  currentUser.inventory = currentUser.inventory || {};
+  currentUser.inventory[item] = (currentUser.inventory[item] || 0) + 1;
+  await db.users.update(currentUser.id, currentUser);
+  await addHistory("buy " + item, -price);
+  showToast(`💸 Beli ${item} (${price})`, "fourScreen");
+  renderMarket(); 
+}
+
+async function sellItem(item, price) {
+  currentUser.inventory = currentUser.inventory || {};
+
+  if (!currentUser.inventory[item] || currentUser.inventory[item] <= 0) {
+    return showToast("🛑 Tiada item nak jual.", "fourScreen");
+  }
+
+  // Kurangkan item
+  currentUser.inventory[item]--;
+  currentUser.balance += price;
+  currentUser.exp += 3;
+  currentUser.level = calculateLevel(currentUser.exp);
+
+  // Kalau jual pager → reset durability
+  if (item === "pager") {
+    currentUser.pagerDurability = 100;
+    currentUser.pagerOn = false;
+    showToast("📟 Pager dijual. Durability reset ke 100%", "threeScreen");
+  }
+  await db.users.update(currentUser.id, currentUser);
+  await addHistory("sell " + item, price);
+  showToast(`💸 Jual ${item} (${price})`, "fourScreen");
+  renderMarket();
+}
+
+setInterval(() => {
+  renderMarket();
+}, 60000); // setiap 1 minit
+
+
+
+    // ─────────── FIVE birdHQ ─────────────────
+     
+
+function showFiveScreen() {
+  switchToScreen("fiveScreen");
+  renderBirdHQ(); 
+}
+
+// birdHQ
+const deliveryItems = ["seed", "pager", "cop", "batery", "feather"];
+const deliveryLocations = ["house", "mall", "school", "cafe", "market", "shop", "customer"];
+
+function randomChoice(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Claim Job
+document.getElementById("claimJobBtn").addEventListener("click", async () => {
+  const now = Date.now();
+  const last = currentUser.lastJobTime || 0;
+  const cooldown = currentUser.jobCooldown || 0;
+
+  if (currentUser.currentJob) return showToast("❗ Selesaikan job sekarang dulu.", "fiveScreen");
+  if (now - last < cooldown) {
+    const wait = Math.ceil((cooldown - (now - last)) / 1000);
+    return showToast(`⏳ Tunggu ${wait}s sebelum claim baru`, "fiveScreen");
+  }
+
+  // Tentukan tier ikut level
+  let tier = "Basic";
+  if (currentUser.level >= 16) tier = "Elite";
+  else if (currentUser.level >= 6) tier = "Pro";
+
+  const tierBonus = {
+    Basic: { reward: 0, exp: 0, cooldown: 60000 },
+    Pro: { reward: 20, exp: 2, cooldown: 55000 },
+    Elite: { reward: 40, exp: 4, cooldown: 50000 }
+  };
+
+  // Cuaca dan kesan
+  let baseCooldown = tierBonus[tier].cooldown;
+  if (currentWeather === "rainy") baseCooldown *= 1.2;
+  if (currentWeather === "windy") baseCooldown *= 1.3;
+
+  // Setup job
+  const item = randomChoice(deliveryItems);
+  const dest = randomChoice(deliveryLocations);
+  const jobType = Math.random() < 0.4 ? "urgent" : "normal";
+  const baseReward = jobType === "urgent" ? 80 : 40;
+  const reward = baseReward + Math.floor(Math.random() * 30) + tierBonus[tier].reward;
+  const exp = Math.floor(3 + Math.random() * 4) + tierBonus[tier].exp;
+  const rating = Math.ceil(Math.random() * 5);
+
+  const newJob = {
+    item,
+    dest,
+    reward,
+    exp,
+    jobType,
+    rating,
+    tier,
+    assignedTime: now
+  };
+
+  currentUser.currentJob = newJob;
+  currentUser.deliveryInventory = currentUser.deliveryInventory || {};
+  currentUser.deliveryInventory[item] = (currentUser.deliveryInventory[item] || 0) + 1;
+  currentUser.lastJobTime = now;
+  currentUser.jobCooldown = baseCooldown;
+
+  await db.users.update(currentUser.id, {
+    currentJob: currentUser.currentJob,
+    deliveryInventory: currentUser.deliveryInventory,
+    lastJobTime: now,
+    jobCooldown: baseCooldown
+  });
+
+  renderBirdHQ();
+  showToast(`📃 Job: ${jobType.toUpperCase()} - Hantar ${item} ke ${dest}`, "fiveScreen");
+});
+
+// Deliver Job
+document.getElementById("deliverJobBtn").addEventListener("click", async () => {
+  const job = currentUser.currentJob;
+  if (!job) return showToast("🛑 Tiada job aktif.", "fiveScreen");
+
+  const inv = currentUser.deliveryInventory || {};
+  if (!inv[job.item] || inv[job.item] <= 0) {
+    return showToast(`🛑 Tiada item ${job.item} untuk dihantar.`, "fiveScreen");
+  }
+
+  const now = Date.now();
+  const elapsed = now - job.assignedTime;
+  let reward = job.reward;
+  let exp = job.exp;
+
+  // Bonus cepat hantar
+  if (elapsed < 30000) {
+    reward = Math.floor(reward * 1.2);
+    exp += 1;
+    showToast(`Fast delivery! Bonus diberikan.`, "fiveScreen");
+  } else if (elapsed > 90000) {
+    reward = Math.floor(reward * 0.9);
+    exp = Math.max(1, exp - 1);
+    showToast(`⁉️ Lambat sikit... reward berkurang.`, "fiveScreen");
+  }
+
+  currentUser.deliveryHistory = currentUser.deliveryHistory || [];
+
+  // JOB GAGAL (lewat lebih 3 minit)
+  if (elapsed > 180000) {
+    currentUser.reputation = Math.max(0, (currentUser.reputation || 0) - 10); // Hanya tolak bila gagal
+    currentUser.currentJob = null;
+    inv[job.item]--;
+    currentUser.exp = Math.max(0, currentUser.exp - 5);
+    currentUser.level = calculateLevel(currentUser.exp);
+    currentUser.streak = 0;
+
+    currentUser.deliveryHistory.push({
+      item: job.item,
+      dest: job.dest,
+      result: "gagal",
+      reward: 0,
+      time: new Date().toISOString()
+    });
+    if (currentUser.deliveryHistory.length > 5) currentUser.deliveryHistory.shift();
+
+    await db.users.update(currentUser.id, {
+      deliveryInventory: inv,
+      exp: currentUser.exp,
+      level: currentUser.level,
+      currentJob: null,
+      streak: 0,
+      deliveryHistory: currentUser.deliveryHistory,
+      reputation: currentUser.reputation
+    });
+
+    return showToast(`❌ Job gagal sebab lambat sangat.`, "fiveScreen");
+  }
+
+  //  JOB BERJAYA
+  inv[job.item]--;
+  currentUser.balance += reward;
+  currentUser.exp += exp;
+  currentUser.level = calculateLevel(currentUser.exp);
+  await addHistory("delivery", reward);
+
+  // Tip system (20%)
+  if (Math.random() < 0.2) {
+    const tip = 20 + Math.floor(Math.random() * 30);
+    currentUser.balance += tip;
+    showToast(`💲 Customer bagi tip +${tip} cxzh!`, "fiveScreen");
+  }
+
+  //  Streak Bonus
+  currentUser.streak = (currentUser.streak || 0) + 1;
+  currentUser.maxStreak = Math.max(currentUser.maxStreak || 0, currentUser.streak);
+  if (currentUser.streak % 10 === 0) {
+    currentUser.balance += 100;
+    currentUser.exp += 10;
+    showToast(`🎇 Streak ${currentUser.streak}! Bonus +100 cxzh`, "fiveScreen");
+  }
+
+  //  Delivery badge counter
+  currentUser.deliveryCount = (currentUser.deliveryCount || 0) + 1;
+
+  //  REPUTASI (+5, atau +7 kalau streak >= 20)
+  currentUser.reputation = Math.min(
+    100,
+    (currentUser.reputation || 0) + 5 + (currentUser.streak >= 20 ? 2 : 0)
+  );
+
+  //  Rekod berjaya
+  currentUser.deliveryHistory.push({
+    item: job.item,
+    dest: job.dest,
+    result: "berjaya",
+    reward: reward,
+    time: new Date().toISOString()
+  });
+  if (currentUser.deliveryHistory.length > 5) currentUser.deliveryHistory.shift();
+
+  currentUser.currentJob = null;
+
+  await db.users.update(currentUser.id, {
+    deliveryInventory: inv,
+    balance: currentUser.balance,
+    exp: currentUser.exp,
+    level: currentUser.level,
+    currentJob: null,
+    streak: currentUser.streak,
+    maxStreak: currentUser.maxStreak,
+    deliveryCount: currentUser.deliveryCount,
+    deliveryHistory: currentUser.deliveryHistory,
+    reputation: currentUser.reputation
+  });
+
+  showToast(`🚛 Hantar berjaya! +${reward} cxzh`, "fiveScreen");
+  renderAll();
+});
+
+// Render birdHQ info
+function renderBirdHQ() {
+  const jobBox = document.getElementById("jobInfo");
+  const invList = document.getElementById("deliveryInventoryList");
+
+  const job = currentUser.currentJob;
+  const now = Date.now();
+  const last = currentUser.lastJobTime || 0;
+  const cooldown = currentUser.jobCooldown || 0;
+  const timeLeft = Math.max(0, cooldown - (now - last));
+
+  if (!job) {
+  jobBox.innerHTML = `
+    <p>No job claimed.</p>
+    ${timeLeft > 0 ? `<p class="text-red-500">Cooldown: <span id="jobCountdown">${Math.ceil(timeLeft / 1000)}</span>s</p>` : `<p class="text-green-600">Ready to claim job</p>`}
+  `;
+} else {
+  const sinceAssigned = Math.floor((Date.now() - job.assignedTime) / 1000);
+  jobBox.innerHTML = `
+    <p><b>${job.jobType.toUpperCase()}</b> job (${job.tier})</p>
+    <p>★ Rating: ${"★".repeat(job.rating) + "☆".repeat(5 - job.rating)}</p>
+    <p>Item: <b>${job.item}</b></p>
+    <p>To: <b>${job.dest}</b></p>
+    <p>Reward: ${job.reward} cxzh / ${job.exp} EXP</p>
+    <p class="text-xs text-gray-600">Elapsed: ${sinceAssigned}s</p>
+  `;
+}
+jobBox.innerHTML += `<p class="text-xs text-blue-500">Cuaca semasa: ${currentWeather}</p>`;
+jobBox.innerHTML += `
+  <div class="mt-2 text-xs text-gray-600">Badge: ${getDeliveryBadge()}</div>
+  <div class="text-xs">Streak: ${currentUser.streak || 0}</div>
+`;
+if (popupJob && Date.now() < popupJob.expires) {
+  jobBox.innerHTML += `
+    <div class="mt-2">
+      <button onclick="claimPopupJob()" class="bg-red-600 text-white px-2 py-1 rounded text-xs">Claim Popup Job</button>
+      <p class="text-xs text-red-400">Expires in ${Math.ceil((popupJob.expires - Date.now()) / 1000)}s</p>
+    </div>
+  `;
+}
+  const rep = currentUser.reputation || 0;
+let repTitle = "Tidak dikenali";
+if (rep >= 20) repTitle = "Dikenali";
+if (rep >= 50) repTitle = "Dihormati";
+if (rep >= 80) repTitle = "Legenda";
+jobBox.innerHTML += `
+  <div class="text-xs text-amber-600">Reputation: ${rep} (${repTitle})</div>
+`;
+  // Inventory view
+  const inv = currentUser.deliveryInventory || {};
+  invList.innerHTML = "";
+  for (let key in inv) {
+    if (inv[key] > 0) {
+      invList.innerHTML += `<li>${key}: ${inv[key]}</li>`;
+    }
+  }
+    const historyBox = document.getElementById("deliveryHistoryList");
+const history = (currentUser.deliveryHistory || []).slice().reverse();
+historyBox.innerHTML = history.length === 0 ? `<li class="text-gray-400">Tiada rekod</li>` : "";
+history.forEach(entry => {
+  historyBox.innerHTML += `<li>${entry.item} → ${entry.dest} (${entry.result}) [+${entry.reward}] <span class="text-gray-400 text-[10px]">${new Date(entry.time).toLocaleTimeString()}</span></li>`;
+});
+}
+
+setInterval(() => {
+  if (document.getElementById("fiveScreen").classList.contains("hidden")) return;
+  const span = document.getElementById("jobCountdown");
+  if (span) {
+    const now = Date.now();
+    const last = currentUser.lastJobTime || 0;
+    const cooldown = currentUser.jobCooldown || 0;
+    const left = Math.max(0, cooldown - (now - last));
+    span.textContent = Math.ceil(left / 1000);
+  }
+}, 1000);
+
+function getDeliveryBadge() {
+  const count = currentUser.deliveryCount || 0;
+  if (count >= 73333) return "🥇 Gold Wing";
+  if (count >= 7700) return "🥈 Silver Wing";
+  if (count >= 700) return "🥉 Bronze Wing";
+  return "🔘 No Badge";
+}
+
+let currentWeather = "sunny"; // default
+const weatherOptions = ["sunny", "rainy", "windy"];
+
+function rotateWeather() {
+  currentWeather = weatherOptions[Math.floor(Math.random() * weatherOptions.length)];
+  showToast(`⛅ Cuaca berubah: ${currentWeather}`, "fiveScreen");
+}
+setInterval(rotateWeather, 300000); // setiap 5 min
+
+let popupJob = null;
+// Auto-spawn setiap 10 minit
+function spawnPopupJob() {
+  const item = randomChoice(deliveryItems);
+  const dest = randomChoice(deliveryLocations);
+  popupJob = {
+    id: Date.now(),
+    item,
+    dest,
+    reward: 150,
+    exp: 10,
+    expires: Date.now() + 60000, // 60s to claim
+    tier: "Special",
+    jobType: "event",
+    rating: 5
+  };
+  showToast(`🛎️ Popup job tersedia selama 60 saat!`, "fiveScreen");
+}
+setInterval(spawnPopupJob, 600000); // setiap 10 min
+
+// Claim Popup Job
+function claimPopupJob() {
+  const now = Date.now();
+
+  if (!popupJob || now > popupJob.expires) {
+    popupJob = null;
+    return showToast("🛎️ Popup job dah tamat.", "fiveScreen");
+  }
+
+  if (currentUser.currentJob) {
+    return showToast("❗ Selesaikan job aktif dulu.", "fiveScreen");
+  }
+
+  currentUser.currentJob = {
+    ...popupJob,
+    assignedTime: now
+  };
+
+  // Tambah item ke inventory
+  currentUser.deliveryInventory = currentUser.deliveryInventory || {};
+  currentUser.deliveryInventory[popupJob.item] = (currentUser.deliveryInventory[popupJob.item] || 0) + 1;
+
+  // Clear popup & simpan data
+  popupJob = null;
+
+  db.users.update(currentUser.id, {
+    currentJob: currentUser.currentJob,
+    deliveryInventory: currentUser.deliveryInventory
+  });
+
+  renderBirdHQ();
+  showToast("🛎️ Popup job diambil! Cepat hantar!", "fiveScreen");
+}
+
+
+
+    // ─────────── SIX gym ──────────────────
+
+
+function showSixScreen() {
+  switchToScreen("sixScreen");
+  renderGymUI(); 
+}
+
+function renderGymUI() {
+  const gymBox = document.getElementById("gymTable");
+  const stats = currentUser.gymStats || {};
+  const cooldowns = currentUser.gymCooldown || {};
+  const now = Date.now();
+
+  const statList = ["stamina", "strength", "speed", "focus", "spirit"];
+  const label = {
+    stamina: "Stamina 💨",
+    strength: "Strength 💪",
+    speed: "Speed ⚡",
+    focus: "Focus 🧠",
+    spirit: "Spirit 🔥"
+  };
+
+  let html = `
+    <table class="w-full text-sm text-center border border-gray-500 rounded overflow-hidden">
+      <tr class="bg-gray-800 text-white">
+        <th>Stat</th><th>Nilai</th><th>Tindakan</th>
+      </tr>
+  `;
+
+  statList.forEach(stat => {
+    const value = stats[stat] || 0;
+    const lastTrain = cooldowns[stat] || 0;
+    const defaultCooldown = 30000;
+    const cooldownLeft = Math.max(0, (lastTrain + defaultCooldown) - now);
+    const disabled = cooldownLeft > 0 ? "disabled opacity-50 cursor-not-allowed" : "";
+
+    html += `
+      <tr class="border-t border-gray-400">
+        <td>${label[stat]}</td>
+        <td class="font-mono">${value.toLocaleString()}</td>
+        <td>
+          <button onclick="trainStat('${stat}')" ${disabled}
+            class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs">⚡Train</button>
+          <button onclick="openMiniTrain('${stat}')"
+            class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs ml-1">🕹️</button>
+          ${cooldownLeft > 0 ? `<div class="text-red-400 text-[10px]">${Math.ceil(cooldownLeft / 1000)}s</div>` : ""}
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `</table>`;
+
+  //  TOTAL & GYM LEVEL
+  const total = Object.values(stats).reduce((a, b) => a + b, 0);
+  const gymLevel = currentUser.gymRoomLevel || 1;
+
+  html += `
+    <div class="mt-2 text-xs text-yellow-400">
+      🏋️ Gym Room Level: <b>${gymLevel}</b>
+      <button onclick="upgradeGymRoom()" class="ml-2 bg-blue-600 px-2 py-1 text-white text-xs rounded">Upgrade (💰${1000 * gymLevel})</button><br>
+      🧮 Total Stat: <span class="text-white">${total.toLocaleString()}</span>
+    </div>
+  `;
+
+  //  TOTAL-BASED TITLE
+  let gymTitle = "Rookie Trainer";
+  if (total >= 50000) gymTitle = "Muscle Bird 💪";
+  if (total >= 250000) gymTitle = "Mind & Muscle ⚡🧠";
+  if (total >= 777777) gymTitle = "Ascended Beast 🔱";
+
+  html += `<div class="mt-1 text-yellow-300 text-xs">🏅 Total Title: <b>${gymTitle}</b></div>`;
+
+  //  STAT-SPECIFIC TITLE
+  const s = stats;
+  let specialTitle = "None";
+  if (s.strength >= 100000) specialTitle = "The Rock";
+  else if (s.speed >= 100000) specialTitle = "Speed Demon";
+  else if (s.focus >= 100000) specialTitle = "Zen Master";
+  else if (s.spirit >= 100000) specialTitle = "Unbreakable";
+  else if (s.stamina >= 100000) specialTitle = "Endurance Beast";
+
+  html += `<div class="text-purple-400 text-xs">🎖️ Stat Title: <b>${specialTitle}</b></div>`;
+
+  //  Passive Unlocks
+  let passiveBonus = [];
+  if (s.stamina >= 50000) passiveBonus.push("💨 Stamina: -10% cooldown");
+  if (s.strength >= 100000) passiveBonus.push("💪 Strength: +5% delivery reward");
+  if (s.focus >= 75000) passiveBonus.push("🧠 Focus: +10% gain chance");
+  if (s.spirit >= 50000) passiveBonus.push("🔥 Spirit: immune to injury");
+
+  html += `
+    <div class="mt-2 text-xs text-blue-300">
+      🌀 Passive Effects:<br>
+      ${passiveBonus.length > 0 ? passiveBonus.map(e => `- ${e}`).join("<br>") : "None unlocked yet."}
+    </div>
+  `;
+
+  //  Daily Challenge
+  const daily = currentUser.dailyGym || {};
+  const count = daily.date === new Date().toDateString() ? (daily.trainedToday || 0) : 0;
+  html += `
+    <div class="mt-2 text-xs text-lime-300">
+      📅 Daily Challenge: Train 5x hari ini<br>
+      🔁 Progress: ${count}/5 ${count >= 5 ? "✅" : ""}
+    </div>
+  `;
+
+  //  Coach Visit (pending bonus)
+  if (currentUser.pendingCoachBoost) {
+    html += `<div class="text-pink-400 text-xs mt-2">🧑‍🏫 Coach sedia bantu! Latihan pertama hari ini akan beri bonus +100</div>`;
+  }
+
+  //  Rival Comparison
+  const rivalPower = 20000 + Math.floor(Math.random() * 20000);
+  const myPower = total;
+  const rivalResult = myPower > rivalPower
+    ? `<span class="text-green-400">Menang! +50 cxzh</span>`
+    : `<span class="text-red-400">Kalah</span>`;
+
+  html += `
+    <div class="mt-3 text-xs text-yellow-300 border-t border-gray-600 pt-2">
+      🆚 Rival Power: <b>${rivalPower.toLocaleString()}</b><br>
+      📊 You: <b>${myPower.toLocaleString()}</b> → ${rivalResult}
+    </div>
+  `;
+
+  gymBox.innerHTML = html;
+}
+
+async function trainStat(stat) {
+  const now = Date.now();
+  currentUser.gymStats = currentUser.gymStats || {};
+  currentUser.gymCooldown = currentUser.gymCooldown || {};
+  currentUser.inventory = currentUser.inventory || {};
+  currentUser.gymRoomLevel = currentUser.gymRoomLevel || 1;
+
+  const cooldowns = currentUser.gymCooldown;
+  const stats = currentUser.gymStats;
+  const inv = currentUser.inventory;
+  const maxStat = 777777777;
+
+  //  GymPass Check
+  let passType = null;
+  if (inv["elite_gympass"] > 0) passType = "elite";
+  else if (inv["pro_gympass"] > 0) passType = "pro";
+  else if (inv["basic_gympass"] > 0) passType = "basic";
+  if (!passType) return showToast("❌ Tiada GymPass!", "sixScreen");
+
+  const passData = {
+    basic: { gain: 30, cooldown: 60000 },
+    pro: { gain: 70, cooldown: 45000 },
+    elite: { gain: 150, cooldown: 30000 }
+  };
+  let { gain, cooldown } = passData[passType];
+
+  //  Gym Room Boost
+  const roomLevel = currentUser.gymRoomLevel;
+  gain += roomLevel * 2;
+  cooldown *= (1 - roomLevel * 0.02); // reduce 2% per level
+
+  //  Cooldown Check
+  const lastTrain = cooldowns[stat] || 0;
+  const left = lastTrain + cooldown - now;
+  if (left > 0) return showToast(`⏳ Tunggu ${Math.ceil(left / 1000)}s`, "sixScreen");
+
+  let actualGain = gain;
+  let expGain = 2; //  Base EXP per training
+
+  const s = currentUser.gymStats;
+  let injuryChance = 0.05;
+  if (s.spirit >= 50000) injuryChance = 0;
+  else if (s.spirit >= 8000) injuryChance = 0.025;
+
+  //  Passive Bonus
+  if (s.focus >= 75000 && Math.random() < 0.1) {
+    actualGain += 20;
+    expGain += 1;
+    showToast("🧠 Fokus tinggi! Gain +20", "sixScreen");
+  }
+
+  //  Bonus Random
+  if (Math.random() < 0.05) {
+    actualGain += 50;
+    expGain += 2;
+    showToast("🔥 You were inspired! +50 gain", "sixScreen");
+  }
+
+  //  Injury Random
+  if (Math.random() < injuryChance) {
+    actualGain = Math.floor(actualGain / 2);
+    expGain = Math.max(1, expGain - 1);
+    showToast("⚠️ Cedera ringan! Gain berkurang, EXP -1", "sixScreen");
+  }
+
+  //  Coach Boost
+  if (currentUser.pendingCoachBoost) {
+    actualGain += 100;
+    expGain += 3;
+    currentUser.pendingCoachBoost = false;
+    showToast("🏋️ Coach bantu! +100 gain", "sixScreen");
+  }
+
+  //  Update Stat & EXP
+  stats[stat] = Math.min(maxStat, (stats[stat] || 0) + actualGain);
+  cooldowns[stat] = now;
+  currentUser.exp = (currentUser.exp || 0) + expGain;
+  currentUser.level = calculateLevel(currentUser.exp);
+  inv[`${passType}_gympass`]--;
+
+  //  Daily Challenge
+  const today = new Date().toDateString();
+  currentUser.dailyGym = currentUser.dailyGym || { date: today, trainedToday: 0, claimed: false };
+  if (currentUser.dailyGym.date !== today) {
+    currentUser.dailyGym = { date: today, trainedToday: 1, claimed: false };
+  } else {
+    currentUser.dailyGym.trainedToday += 1;
+  }
+
+  if (currentUser.dailyGym.trainedToday >= 5 && !currentUser.dailyGym.claimed) {
+    currentUser.dailyGym.claimed = true;
+    inv["basic_gympass"] = (inv["basic_gympass"] || 0) + 1;
+    showToast("🎁 Cabaran Harian Siap! +1 GymPass", "sixScreen");
+  }
+
+  //  Simpan DB
+  await db.users.update(currentUser.id, {
+    gymStats: stats,
+    gymCooldown: cooldowns,
+    inventory: inv,
+    exp: currentUser.exp,
+    level: currentUser.level,
+    dailyGym: currentUser.dailyGym,
+    pendingCoachBoost: currentUser.pendingCoachBoost
+  });
+
+  showToast(`✅ ${stat.toUpperCase()} +${actualGain}`, "sixScreen");
+  renderGymUI();
+}
+
+setInterval(() => {
+  if (!document.getElementById("sixScreen")?.classList.contains("hidden")) {
+    renderGymUI();
+  }
+}, 1000);
+
+function openMiniTrain(stat) {
+  const maxTaps = 77;
+  let tapCount = 0;
+  let bonusGain = 0;
+
+  const overlay = document.createElement("div");
+  overlay.className = "fixed inset-0 bg-black/80 flex items-center justify-center z-50";
+
+  const box = document.createElement("div");
+  box.className = "bg-gray-900 text-white p-6 rounded-lg text-center space-y-2 shadow-lg";
+  box.innerHTML = `
+    <h3 class="text-lg font-bold text-yellow-400">Mini Train: ${stat.toUpperCase()}</h3>
+    <p>Tap <b>${maxTaps}</b> kali secepat mungkin untuk bonus latihan!</p>
+    <button id="miniTapBtn" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded text-white font-bold text-xl">TAP (${tapCount}/${maxTaps})</button>
+  `;
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  const tapBtn = document.getElementById("miniTapBtn");
+
+  tapBtn.onclick = async () => {
+    tapCount++;
+    tapBtn.innerText = `TAP (${tapCount}/${maxTaps})`;
+
+    if (tapCount >= maxTaps) {
+      bonusGain = 30 + Math.floor(Math.random() * 20); // +30–49
+      const expGain = 2;
+
+      // Stat gain
+      currentUser.gymStats = currentUser.gymStats || {};
+      currentUser.gymStats[stat] = (currentUser.gymStats[stat] || 0) + bonusGain;
+
+      // EXP gain
+      currentUser.exp = (currentUser.exp || 0) + expGain;
+      currentUser.level = calculateLevel(currentUser.exp);
+
+      await db.users.update(currentUser.id, {
+        gymStats: currentUser.gymStats,
+        exp: currentUser.exp,
+        level: currentUser.level
+      });
+
+      document.body.removeChild(overlay);
+      showToast(`🕹️ Mini Train +${bonusGain} ${stat.toUpperCase()}!`, "sixScreen");
+      renderGymUI();
+    }
+  };
+}
+
+async function upgradeGymRoom() {
+  currentUser.gymRoomLevel = currentUser.gymRoomLevel || 1;
+  const cost = 1000 * currentUser.gymRoomLevel;
+
+  if (currentUser.balance < cost) {
+    return showToast("❌ Cxzh tak cukup untuk upgrade!", "sixScreen");
+  }
+
+  // Tolak cxzh dan naikkan level bilik
+  currentUser.balance -= cost;
+  currentUser.gymRoomLevel++;
+
+  // EXP bonus
+  const expGain = 30;
+  currentUser.exp = (currentUser.exp || 0) + expGain;
+  currentUser.level = calculateLevel(currentUser.exp);
+
+  await db.users.update(currentUser.id, {
+    balance: currentUser.balance,
+    gymRoomLevel: currentUser.gymRoomLevel,
+    exp: currentUser.exp,
+    level: currentUser.level
+  });
+
+  showToast(`🏗️ Gym upgrade ke Level ${currentUser.gymRoomLevel})!`, "sixScreen");
+  renderGymUI();
+}
+
+   // ─────────── SEVEN ───────────────────
+
+              <!-- End JS Area -->
+  </script>
+  <style>
+    @keyframes fadein {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadein {
+  animation: fadein 0.3s ease-out;
+}
+  </style>
+</body>
+</html>
