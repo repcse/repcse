@@ -5,23 +5,24 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>repcse v2</title>
 <style>
-body{margin:0;font-family:monospace;background:#fff;color:#000;display:flex;justify-content:center;align-items:center;height:100vh}
-#app{width:300px;height:180px;border:1px solid #000;display:flex;flex-direction:column;background:#fff}
-header{padding:3px 5px;border-bottom:1px solid #000;font-weight:bold;text-align:center;font-size:14px}
+body{margin:0;font-family:monospace;background:white;color:black;display:flex;justify-content:center;align-items:center;height:100vh}
+#app{width:300px;height:180px;border:1px solid black;display:flex;flex-direction:column;background:white}
+header{padding:3px 5px;border-bottom:1px solid #000;font-weight:bold;text-align:center;font-size:14px;text-transform:lowercase}
 #screen{flex:1;overflow-y:auto;padding:5px;font-size:12px}
-section{display:none;margin-bottom:5px}
+section{display:none;margin-bottom:5px;text-transform:lowercase}
 section p{margin:2px 0}
 nav{display:flex;border-top:1px solid #000;font-size:10px}
-nav a{flex:1;text-align:center;padding:2px 0;text-decoration:none;color:#000;border-right:1px solid #000;opacity:.5;pointer-events:none}
+nav a{flex:1;text-align:center;padding:2px 0;text-decoration:none;color:black;border-right:1px solid #000;pointer-events:none;opacity:.5;text-transform:lowercase}
 nav a:last-child{border-right:none}
-nav a.active{opacity:1;pointer-events:auto}
-a.action{color:blue;text-decoration:underline;cursor:pointer;font-size:11px}
-.message{font-size:10px;margin:2px 0}
+nav a.active{pointer-events:auto;opacity:1}
+a.action{color:blue;cursor:pointer;text-decoration:underline;font-size:11px}
+.message{font-size:10px;margin:2px 0;text-transform:lowercase}
 .msg-error{color:red}.msg-success{color:green}.msg-info{color:blue}
-table{width:100%;font-size:12px;border-collapse:collapse}
+table{width:100%;font-size:12px;border-collapse:collapse;text-transform:lowercase}
 td{padding:2px}
-.mod-data-wrapper{display:flex;gap:10px}
-.mod-left,.mod-right{width:50%}
+.mod-data-wrapper{display:flex;flex-direction:row;gap:10px}
+.mod-left,.mod-right{width:50%;font-size:12px}
+.mod-left p,.mod-right p{margin:2px 0}
 input[type=file]{display:none}
 </style>
 </head>
@@ -30,12 +31,14 @@ input[type=file]{display:none}
 <header>repcse</header>
 <div id="screen">
 
+<!-- HOME -->
 <section id="mod-home">
 <p><strong>register / load</strong></p>
 <input id="signup-password" type="password" maxlength="6" placeholder="enter password (max 6 digits)">
-<p><a class="action" onclick="signup()">sign up</a> | <a class="action" onclick="loadFileBtn()">load</a></p>
+<p><a href="#" class="action" onclick="signup()">sign up</a> | <a href="#" class="action" onclick="document.getElementById('load-file').click()">load</a></p>
 </section>
 
+<!-- WORK -->
 <section id="mod-work">
 <p><strong>work</strong></p>
 <table>
@@ -44,192 +47,181 @@ input[type=file]{display:none}
 <tr><td>wage:</td><td id="job-wage">-</td></tr>
 <tr><td>cost(buzz):</td><td id="job-buzzcost">-</td></tr>
 </table>
-<p><a class="action" onclick="acceptJob()">accept</a> | <a class="action" onclick="deliverJob()">deliver</a></p>
+<p><a href="#" class="action" onclick="acceptJob()">accept job</a> | <a href="#" class="action" onclick="deliverJob()">deliver job</a></p>
 </section>
 
+<!-- DATA -->
 <section id="mod-data">
-<p><strong>user data</strong></p>
+<p><strong>player data</strong></p>
 <div class="mod-data-wrapper">
-<div class="mod-left">
-<p>tag: <span id="player-tag">-</span></p>
-<p>cr: <span id="player-cr">0.00</span></p>
-<p>level: <span id="player-level">1</span></p>
-<p>date: <span id="player-date">-</span></p>
-<p>days: <span id="player-days">0</span></p>
-<p><a class="action" onclick="confirmReset()">reset</a> | <a class="action" onclick="saveData()">save</a> | <a class="action" onclick="loadFileBtn()">load</a></p>
-</div>
-<div class="mod-right">
-<p>buzz: <span id="player-buzz">37</span></p>
-<p>total jobs: <span id="player-totaljobs">0</span></p>
-</div>
+ <div class="mod-left">
+  <p>tag: <span id="player-tag">-</span></p>
+  <p>cr: <span id="player-cr">0.00</span></p>
+  <p>level: <span id="player-level">1</span></p>
+  <p>date: <span id="player-date">-</span></p>
+  <p>days: <span id="player-days">0</span></p>
+  <p><a href="#" class="action" onclick="confirmReset()">reset</a> | <a href="#" class="action" onclick="saveData()">save</a> | <a href="#" class="action" onclick="document.getElementById('load-file').click()">load</a></p>
+ </div>
+ <div class="mod-right">
+  <p>buzz: <span id="player-buzz">37</span></p>
+  <p>total jobs: <span id="player-totaljobs">0</span></p>
+ </div>
 </div>
 </section>
 
+<!-- RELAX -->
 <section id="mod-relax">
 <p><strong>relax</strong></p>
-<div style="text-align:center;margin-top:20px">
-<a class="action" id="relax-btn" onclick="startRelax()">relax</a>
-<p id="relax-timer" style="display:none;font-size:12px">10 second...</p>
+<div style="text-align:center;margin-top:20px;">
+ <a href="#" class="action" id="relax-btn" onclick="startRelax()">relax</a>
+ <p id="relax-timer" style="display:none;font-size:12px">10 second...</p>
 </div>
 </section>
 
 </div>
 
+<!-- NAV -->
 <nav>
-<a id="nav-work" onclick="showMod('mod-work')">work</a>
-<a id="nav-data" onclick="showMod('mod-data')">data</a>
-<a id="nav-relax" onclick="showMod('mod-relax')">relax</a>
+<a href="#" id="nav-work" onclick="showMod('mod-work')">work</a>
+<a href="#" id="nav-data" onclick="showMod('mod-data')">data</a>
+<a href="#" id="nav-relax" onclick="showMod('mod-relax')">relax</a>
 </nav>
 </div>
 
+<!-- single hidden file input -->
 <input type="file" id="load-file" accept=".txt" onchange="loadFromFile(event)">
 
 <script>
 /* config */
-const MAX_BUZZ=37,GIG={type:'gig',buzzCost:3,wage:0.37,expMin:1,expMax:5},MAX_LEVEL=50,RELAX_COST=.12,RELAX_GAIN=5,RELAX_SECONDS=10;
+const MAX_BUZZ = 37;
+const GIG = {type:'gig',buzzCost:3,wage:0.37,expMin:1,expMax:5};
+const MAX_LEVEL = 50;
+const RELAX_COST = 0.12;
+const RELAX_GAIN = 5;
+const RELAX_SECONDS = 10;
 
-/* storage */
-const getPlayer=()=>JSON.parse(localStorage.getItem('player')||'null');
-const savePlayer=p=>localStorage.setItem('player',JSON.stringify(p));
-const generateChecksum=p=>btoa((p.tag||'')+'|'+p.level+'|'+Number(p.cr||0).toFixed(2));
-const validateChecksum=p=>p&&p.check===generateChecksum(p);
+/* storage helpers */
+function getPlayer(){return JSON.parse(localStorage.getItem('player')||'null')}
+function savePlayer(p){localStorage.setItem('player',JSON.stringify(p))}
+function generateChecksum(p){return btoa((p.tag||'')+'|'+p.level+'|'+Number(p.cr||0).toFixed(2))}
+function validateChecksum(p){if(!p||!p.check) return false; return p.check===generateChecksum(p)}
 
 /* init */
 function initPlayer(){
  const p=getPlayer();
- if(!p){showMod('mod-home');hideNav();}
- else{enableNav();updateUI();showMod('mod-data');document.getElementById('mod-home').style.display='none'}
+ if(!p){showMod('mod-home');hideNav();}else{enableNav();updateUI();showMod('mod-data');document.getElementById('mod-home').style.display='none'}
  setInterval(updateDays,1000);
 }
-const hideNav=()=>document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
-const enableNav=()=>document.querySelectorAll('nav a').forEach(a=>a.classList.add('active'));
+function hideNav(){document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'))}
+function enableNav(){document.querySelectorAll('nav a').forEach(a=>a.classList.add('active'))}
 
 /* signup */
 function signup(){
  const pw=document.getElementById('signup-password').value.trim();
- if(!pw||pw.length>6)return printMessage('invalid password!','error');
- const tag=String(Math.floor(3+Math.random()*997)).padStart(3,'0'),today=new Date();
- const p={version:1,tag,password:pw,cr:0,level:1,exp:0,date:today.toLocaleDateString(),signupTime:today.getTime(),buzz:MAX_BUZZ,totalJobs:0};
- p.check=generateChecksum(p);savePlayer(p);updateUI();enableNav();showMod('mod-data');document.getElementById('mod-home').style.display='none';
+ if(!pw||pw.length>6) return printMessage('invalid password!','error');
+ const tag=String(Math.floor(3+Math.random()*997)).padStart(3,'0');
+ const today=new Date();
+ const player={version:1,tag,password:pw,cr:0,level:1,exp:0,date:today.toLocaleDateString(),signupTime:today.getTime(),buzz:MAX_BUZZ,totalJobs:0};
+ player.check=generateChecksum(player);
+ savePlayer(player);updateUI();enableNav();showMod('mod-data');document.getElementById('mod-home').style.display='none';
  printMessage('registration successful!','success');
 }
 
-/* UI */
+/* UI updates */
 function updateUI(){
- const p=getPlayer(); if(!p)return;
- ['tag','cr','level','date','buzz','totaljobs'].forEach(f=>{
-  const id='player-'+f,val=p[f]!==undefined?p[f]:'-';
-  document.getElementById(id).textContent=f==='cr'?Number(val).toFixed(2):val;
- });
+ const p=getPlayer(); if(!p) return;
+ document.getElementById('player-tag').textContent=p.tag;
+ document.getElementById('player-cr').textContent=Number(p.cr||0).toFixed(2);
+ document.getElementById('player-level').textContent=p.level;
+ document.getElementById('player-date').textContent=p.date;
  updateDays();
+ document.getElementById('player-buzz').textContent=p.buzz;
+ document.getElementById('player-totaljobs').textContent=p.totalJobs||0;
  if(p.activeJob){
-  job_re.textContent=p.activeJob.receiver;
-  job_t.textContent=p.activeJob.type;
-  job_w.textContent=p.activeJob.wage.toFixed(2)+' cr';
-  job_b.textContent=p.activeJob.buzzCost;
- }else['job-receiver','job-type','job-wage','job-buzzcost'].forEach(id=>document.getElementById(id).textContent='-');
+  document.getElementById('job-receiver').textContent=p.activeJob.receiver;
+  document.getElementById('job-type').textContent=p.activeJob.type;
+  document.getElementById('job-wage').textContent=p.activeJob.wage.toFixed(2)+' cr';
+  document.getElementById('job-buzzcost').textContent=p.activeJob.buzzCost;
+ } else {
+  ['job-receiver','job-type','job-wage','job-buzzcost'].forEach(id=>document.getElementById(id).textContent='-');
+ }
 }
-const job_re=document.getElementById('job-receiver'),
-job_t=document.getElementById('job-type'),
-job_w=document.getElementById('job-wage'),
-job_b=document.getElementById('job-buzzcost');
 
 /* days */
 function updateDays(){
- const p=getPlayer(); if(!p)return;
- const days=p.signupTime?Math.floor((Date.now()-p.signupTime)/86400000):0;
+ const p=getPlayer(); if(!p) return;
+ if(!p.signupTime){document.getElementById('player-days').textContent='0'; return;}
+ const now=Date.now(); const days=Math.floor((now-p.signupTime)/86400000);
  document.getElementById('player-days').textContent=days;
 }
 
-/* messages */
+/* messages (only latest shown) */
 function printMessage(msg,type='info'){
  document.querySelectorAll('.message').forEach(n=>n.remove());
- const active=[...document.querySelectorAll('#screen>section')].find(s=>s.style.display!='none');
- if(!active)return;
- const p=document.createElement('p');p.className='message msg-'+type;p.innerHTML=msg;active.appendChild(p);
- active.scrollTop=active.scrollHeight;
+ const active=[...document.querySelectorAll('#screen > section')].find(s=>s.style.display!=='none');
+ if(!active) return;
+ const p=document.createElement('p'); p.innerHTML=msg; p.className='message msg-'+type; active.appendChild(p); active.scrollTop=active.scrollHeight;
 }
 
-/* job */
+/* JOB (gig only) */
 function acceptJob(){
- const p=getPlayer(); if(!p)return;
- if(p.activeJob)return printMessage('finish your current job first!','error');
- if(p.buzz<GIG.buzzCost)return printMessage('not enough buzz!','error');
- const r=String(Math.floor(3+Math.random()*997)).padStart(3,'0');
- p.buzz-=GIG.buzzCost;
- p.activeJob={type:GIG.type,receiver:r,wage:GIG.wage,buzzCost:GIG.buzzCost};
- p.exp+=Math.floor(Math.random()*(GIG.expMax-GIG.expMin+1))+GIG.expMin;
- while(p.exp>=p.level*100&&p.level<MAX_LEVEL){p.exp-=p.level*100;p.level++;printMessage('[level up!]','success')}
- p.check=generateChecksum(p);savePlayer(p);updateUI();
- printMessage(`job accepted: gig to ${r}`,'success');
+ const p=getPlayer(); if(!p) return;
+ if(p.activeJob) return printMessage('finish your current job first!','error');
+ const buzzCost=GIG.buzzCost, wage=GIG.wage;
+ if(p.buzz<buzzCost) return printMessage('not enough buzz!','error');
+ const receiver=String(Math.floor(3+Math.random()*997)).padStart(3,'0');
+ p.buzz=Math.max(0,p.buzz-buzzCost);
+ p.activeJob={type:GIG.type,receiver,wage,buzzCost};
+ const gain = Math.floor(Math.random()*(GIG.expMax-GIG.expMin+1))+GIG.expMin;
+ p.exp += gain;
+ while(p.exp>=p.level*100 && p.level<MAX_LEVEL){
+  p.exp -= p.level*100; p.level++; printMessage('[level up!]','success');
+ }
+ p.check=generateChecksum(p); savePlayer(p); updateUI(); printMessage(`job accepted: ${GIG.type} to ${receiver}`,'success');
 }
+
 function deliverJob(){
- const p=getPlayer(); if(!p||!p.activeJob)return printMessage('no active job!','error');
- p.cr+=p.activeJob.wage;p.totalJobs++;delete p.activeJob;
- p.check=generateChecksum(p);savePlayer(p);updateUI();
- printMessage('job delivered successfully!','success');
+ const p=getPlayer(); if(!p||!p.activeJob) return printMessage('no active job!','error');
+ p.cr = (Number(p.cr)||0) + p.activeJob.wage;
+ p.totalJobs = (p.totalJobs||0)+1;
+ delete p.activeJob;
+ p.check=generateChecksum(p); savePlayer(p); updateUI(); printMessage('job delivered successfully!','success');
 }
 
 /* reset/save/load */
-function confirmReset(){printMessage('delete all data? <a class="action" onclick="resetData()">[yes]</a>','info')}
-function resetData(){
- localStorage.removeItem('player');
- showMod('mod-home');hideNav();
- ['job-receiver','job-type','job-wage','job-buzzcost'].forEach(id=>document.getElementById(id).textContent='-');
- printMessage('all data reset. please sign up or load.','info');
-}
-function saveData(){
- const p=getPlayer();if(!p)return;
- p.check=generateChecksum(p);
- const a=document.createElement('a');
- a.href=URL.createObjectURL(new Blob([JSON.stringify(p)],{type:'text/plain'}));
- a.download='repcse_data.txt';a.click();
-}
-const loadFileBtn=()=>document.getElementById('load-file').click();
-function loadFromFile(e){
- const f=e.target.files[0];if(!f)return;
- const r=new FileReader();
- r.onload=x=>{
-  try{
-   const d=JSON.parse(x.target.result);
-   if(!validateChecksum(d))return printMessage('invalid or modified file!','error');
-   localStorage.setItem('player',JSON.stringify(d));enableNav();showMod('mod-data');updateUI();
-   document.getElementById('mod-home').style.display='none';printMessage('data loaded successfully!','success');
-  }catch{printMessage('invalid file format!','error')}
- };
- r.readAsText(f);e.target.value='';
-}
+function confirmReset(){ printMessage('delete all data? <a href="#" class="action" onclick="resetData()">[yes]</a>','info') }
+function resetData(){ localStorage.removeItem('player'); document.getElementById('mod-home').style.display='block'; showMod('mod-home'); hideNav(); ['job-receiver','job-type','job-wage','job-buzzcost'].forEach(id=>document.getElementById(id).textContent='-'); printMessage('all data reset. please sign up or load.','info') }
 
-/* relax */
-let relaxActive=false,relaxTimer=null;
+function saveData(){ const p=getPlayer(); if(!p) return; p.check=generateChecksum(p); const blob=new Blob([JSON.stringify(p)],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='repcse_data.txt'; a.click(); }
+
+function loadFromFile(e){ const file=e.target.files[0]; if(!file) return; const r=new FileReader(); r.onload=function(ev){ try{ const data=JSON.parse(ev.target.result); if(!validateChecksum(data)) return printMessage('invalid or modified file!','error'); localStorage.setItem('player',JSON.stringify(data)); enableNav(); showMod('mod-data'); updateUI(); document.getElementById('mod-home').style.display='none'; printMessage('data loaded successfully!','success'); }catch{ printMessage('invalid file format!','error'); } }; r.readAsText(file); e.target.value=''; }
+
+/* RELAX mode */
+let relaxActive=false, relaxInterval=null;
 function startRelax(){
- if(relaxActive)return;
- const p=getPlayer();if(!p)return;
- p.cr-=RELAX_COST;p.check=generateChecksum(p);savePlayer(p);updateUI();
+ if(relaxActive) return;
+ const p=getPlayer(); if(!p) return;
+ // charge cost (allow negative)
+ p.cr = (Number(p.cr)||0) - RELAX_COST;
+ p.check = generateChecksum(p); savePlayer(p); updateUI();
  relaxActive=true;
- const btn=document.getElementById('relax-btn'),tm=document.getElementById('relax-timer');
- btn.style.display='none';tm.style.display='block';
- let t=RELAX_SECONDS;tm.textContent=t+' second...';
- relaxTimer=setInterval(()=>{
-  t--;tm.textContent=t+' second...';
-  if(t<=0){clearInterval(relaxTimer);finishRelax();}
- },1000);
+ document.getElementById('relax-btn').style.display='none';
+ const timerEl=document.getElementById('relax-timer'); timerEl.style.display='block';
+ let timeLeft=RELAX_SECONDS; timerEl.textContent=timeLeft+' second...';
+ relaxInterval=setInterval(()=>{ timeLeft--; timerEl.textContent=timeLeft+' second...'; if(timeLeft<=0){ clearInterval(relaxInterval); finishRelax(); } },1000);
 }
 function finishRelax(){
  relaxActive=false;
- const p=getPlayer();if(!p)return;
- p.buzz=Math.min(MAX_BUZZ,p.buzz+RELAX_GAIN);
- p.check=generateChecksum(p);savePlayer(p);updateUI();
+ const p=getPlayer(); if(!p) return;
+ p.buzz = Math.min(MAX_BUZZ, Number(p.buzz||0) + RELAX_GAIN);
+ p.check=generateChecksum(p); savePlayer(p); updateUI();
  printMessage('you feel refreshed! +5 buzz','success');
  document.getElementById('relax-btn').style.display='inline';
  document.getElementById('relax-timer').style.display='none';
 }
 
-/* navigation */
-function showMod(id){
- document.querySelectorAll('#screen>section').forEach(s=>s.style.display='none');
- document.getElementById(id).style.display='block';
-}
+/* navigation + show */
+function showMod(id){ document.querySelectorAll('#screen>section').forEach(s=>s.style.display='none'); document.getElementById(id).style.display='block' }
 
 /* start */
 window.onload=initPlayer;
